@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <GL/GL.h>
+#include <GL/GLU.h>
 
 const char g_szClassName[] = "rsrWin";
 
@@ -56,12 +57,21 @@ public:
          return 1;
       }
 
+      DWORD wflags = WS_OVERLAPPEDWINDOW;
+
+      RECT rect = { 0 };
+      rect.right = (LONG)width;
+      rect.bottom = (LONG)height;
+      AdjustWindowRect(&rect, wflags, false);
+
       m_hWnd = CreateWindowEx(
          WS_EX_CLIENTEDGE,
          g_szClassName,
          title,
-         WS_OVERLAPPEDWINDOW,
-         CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+         wflags,
+         CW_USEDEFAULT, CW_USEDEFAULT, 
+         rect.right - rect.left, 
+         rect.bottom - rect.top,
          NULL, NULL, m_hInstance, NULL);
 
       if (m_hWnd == NULL) {
@@ -129,8 +139,6 @@ public:
    }
 
    void swapBuffers() {
-      glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       SwapBuffers(m_hdc);
    }
 };
