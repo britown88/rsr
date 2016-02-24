@@ -126,6 +126,18 @@ public:
       });
    }
 
+   void setUBOMatrix(UBO *ubo, size_t offset, Matrix const &value) {
+      draw([=]() {
+         UBOManager::setMatrix(ubo, offset, value);
+      });
+   }
+
+   void bindUBO(UBO *ubo, UBOSlot slot) {
+      draw([=]() {
+         UBOManager::bind(ubo, slot);
+      });
+   }
+
    void renderModel(Model *m) {
       draw([=]() {
          if (m != m_activeModel) {
@@ -159,5 +171,8 @@ void Renderer::setColor(StringView u, ColorRGBAf const &value) { pImpl->setColor
 
 void Renderer::setTextureSlot(StringView u, TextureSlot const &value){pImpl->setTextureSlot(u, value);}
 void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, slot);}
+
+void Renderer::setUBOMatrix(UBO *ubo, size_t offset, Matrix const &value) { pImpl->setUBOMatrix(ubo, offset, value); }
+void Renderer::bindUBO(UBO *ubo, UBOSlot slot) { pImpl->bindUBO(ubo, slot); }
 
 void Renderer::renderModel(Model *m) { pImpl->renderModel(m); }

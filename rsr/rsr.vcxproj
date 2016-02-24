@@ -157,6 +157,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="StringView.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="UBO.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -170,12 +171,16 @@
     <ClInclude Include="Singleton.hpp" />
     <ClInclude Include="StringView.hpp" />
     <ClInclude Include="Texture.hpp" />
+    <ClInclude Include="UBO.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libpng\libpng.vcxproj">
       <Project>{3c2c530b-1813-4914-b9a7-47e94c44f737}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

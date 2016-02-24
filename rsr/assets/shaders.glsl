@@ -19,11 +19,9 @@
 #endif
 
 #ifdef VERTEX
-   //layout(std140) uniform uCamera{
-   //   mat4 uViewMatrix;
-   //};
-
-   uniform mat4 uViewMatrix;
+   layout(std140, binding = 0) uniform uboView{
+      mat4 uViewMatrix;
+   };
 
    uniform mat4 uModelMatrix;
    uniform vec4 uColorTransform;
@@ -49,10 +47,10 @@
       vTexCoords = coord.xy;
       #endif
 
-      #ifdef POSITION_3D
-      vec4 position = vec4(aPosition3, 1);
-      #else
+      #ifdef POSITION_2D
       vec4 position = vec4(aPosition2, 0, 1);
+      #else
+	  vec4 position = vec4(aPosition3, 1);
       #endif      
       
       gl_Position = uViewMatrix * (uModelMatrix * position);

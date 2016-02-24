@@ -57,6 +57,9 @@
     <ClCompile Include="Window.cpp">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
+    <ClCompile Include="UBO.cpp">
+      <Filter>Source Files\graphical</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DrawQueue.hpp">
@@ -92,5 +95,13 @@
     <ClInclude Include="Window.hpp">
       <Filter>Header Files\platform</Filter>
     </ClInclude>
+    <ClInclude Include="UBO.hpp">
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

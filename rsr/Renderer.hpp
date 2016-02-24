@@ -10,6 +10,7 @@
 #include "Color.hpp"
 #include "Geom.hpp"
 #include "StringView.hpp"
+#include "UBO.hpp"
 
 
 class Renderer {
@@ -38,6 +39,9 @@ public:
 
    void setTextureSlot(StringView u, TextureSlot const &value);
    void bindTexture(Texture *t, TextureSlot slot);
+
+   void setUBOMatrix(UBO *ubo, size_t offset, Matrix const &value);
+   void bindUBO(UBO *ubo, UBOSlot slot);
 
    void renderModel(Model *m);
 

@@ -2,6 +2,7 @@
 #include "Renderer.hpp"
 
 #include "Model.hpp"
+#include "UBO.hpp"
 
 Model *buildTestModel() {
 
@@ -44,8 +45,13 @@ void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
 
    ColorRGBAf colorTransform = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+   UBO *ubo = UBOManager::create(sizeof(Matrix));
+   r.setUBOMatrix(ubo, 0, viewTransform);
+   r.bindUBO(ubo, 0);
+
+
    r.setShader(s);
-   r.setMatrix(uView, viewTransform);
+   //r.setMatrix(uView, viewTransform);
    r.setMatrix(uModel, modelTransform);
    r.setMatrix(uTexture, texTransform);
    r.setColor(uColor, colorTransform);
@@ -69,7 +75,7 @@ int main()
    Renderer r(win);
 
    auto m = buildTestModel();
-   auto s = ShaderManager::create("assets/shaders.glsl", DiffuseTexture|Position3D);
+   auto s = ShaderManager::create("assets/shaders.glsl", DiffuseTexture);
    TextureRequest request(internString("assets/00.png"));
    auto t = TextureManager::get(request);
 

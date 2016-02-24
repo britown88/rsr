@@ -101,11 +101,11 @@ class Shader {
          return;
       }
 
-      std::string Version = "#version 140\n";
+      std::string Version = "#version 420\n";
       std::string VertexOption = "#define VERTEX\n";
       std::string FragmentOption = "#define FRAGMENT\n";
       std::string DiffuseTextureOption = "#define DIFFUSE_TEXTURE\n";
-      std::string Position3DOption = "#define POSITION_3D\n";
+      std::string Position2DOption = "#define POSITION_2D\n";
 
       std::vector<const char*> vertShader, fragShader;
 
@@ -114,8 +114,8 @@ class Shader {
       if (m_params&DiffuseTexture) {
          vertShader.push_back(DiffuseTextureOption.c_str());
       }
-      if (m_params&Position3D) {
-         vertShader.push_back(Position3DOption.c_str());
+      if (m_params&Position2D) {
+         vertShader.push_back(Position2DOption.c_str());
       }
       vertShader.push_back(file);
       auto vert = compile(vertShader, GL_VERTEX_SHADER);
