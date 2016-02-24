@@ -24,14 +24,13 @@ public:
          glDeleteBuffers(1, &m_ubo);
       }
    }
-
-   void seMatrix(UBO *self, size_t offset, Matrix const &value) {
+   void setData(UBO *self, size_t offset, size_t size, void *data) {
       if (!m_built) {
          build();
       }
 
       glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
-      glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(value), (float*)&value);
+      glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
       glBindBuffer(GL_UNIFORM_BUFFER, 0);
    }
 
@@ -48,5 +47,5 @@ public:
 UBO *UBOManager::create(size_t size) { return new UBO(size); }
 void UBOManager::destroy(UBO *self) { delete self; }
 
-void UBOManager::setMatrix(UBO *self, size_t offset, Matrix const &value) { self->seMatrix(self, offset, value); }
+void UBOManager::setData(UBO *self, size_t offset, size_t size, void *data) { self->setData(self, offset, size, data); }
 void UBOManager::bind(UBO *self, UBOSlot slot) { self->bind(slot); }

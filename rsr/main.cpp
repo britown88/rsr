@@ -24,7 +24,6 @@ Model *buildTestModel() {
 
 void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
 
-   auto uView = internString("uViewMatrix");
    auto uModel = internString("uModelMatrix");
    auto uColor = internString("uColorTransform");
    auto uTexture = internString("uTexMatrix");
@@ -46,12 +45,11 @@ void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
    ColorRGBAf colorTransform = { 1.0f, 1.0f, 1.0f, 1.0f };
 
    UBO *ubo = UBOManager::create(sizeof(Matrix));
-   r.setUBOMatrix(ubo, 0, viewTransform);
    r.bindUBO(ubo, 0);
 
+   r.setUBOData(ubo, &viewTransform);
 
    r.setShader(s);
-   //r.setMatrix(uView, viewTransform);
    r.setMatrix(uModel, modelTransform);
    r.setMatrix(uTexture, texTransform);
    r.setColor(uColor, colorTransform);
@@ -62,6 +60,7 @@ void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
    r.renderModel(m);
 
    r.finish();
+   r.flush();
 }
 
 int main()
@@ -84,7 +83,7 @@ int main()
    while (!win->shouldClose()) {
       win->pollEvents();
       testRender(r, s, m, t);
-      r.flush();
+      
    }
 
    Window::destroy(win);

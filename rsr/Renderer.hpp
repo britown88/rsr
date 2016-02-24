@@ -16,6 +16,8 @@
 class Renderer {
    class Impl;
    std::unique_ptr<Impl> pImpl;
+
+   void _setUBOData(UBO *ubo, size_t offset, size_t size, void *data);
 public:
    Renderer(Window *wnd);
    ~Renderer();
@@ -40,7 +42,10 @@ public:
    void setTextureSlot(StringView u, TextureSlot const &value);
    void bindTexture(Texture *t, TextureSlot slot);
 
-   void setUBOMatrix(UBO *ubo, size_t offset, Matrix const &value);
+   template<typename T>
+   void setUBOData(UBO *ubo, T *value) {
+      _setUBOData(ubo, 0, sizeof(T), value);
+   }
    void bindUBO(UBO *ubo, UBOSlot slot);
 
    void renderModel(Model *m);
