@@ -74,14 +74,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
       <SubSystem>
       </SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>Lib/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -89,14 +91,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
       <SubSystem>
       </SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>Lib/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -106,16 +110,18 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
       <SubSystem>
       </SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>Lib/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -125,23 +131,39 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;gdi32.lib;user32.lib</AdditionalDependencies>
       <SubSystem>
       </SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
+      <AdditionalLibraryDirectories>Lib/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Geom.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="StringView.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Color.hpp" />
+    <ClInclude Include="Defs.hpp" />
+    <ClInclude Include="DrawQueue.hpp" />
+    <ClInclude Include="Geom.hpp" />
+    <ClInclude Include="Model.hpp" />
+    <ClInclude Include="Renderer.hpp" />
+    <ClInclude Include="Shader.hpp" />
+    <ClInclude Include="Singleton.hpp" />
+    <ClInclude Include="StringView.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
