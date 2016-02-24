@@ -5,11 +5,11 @@
 
 Model *buildTestModel() {
 
-   std::vector<FVF_Pos2_Tex2_Col4> vertices = {
-      { { 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-      { { 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-      { { 1.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-      { { 0.0f, 1.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
+   std::vector<FVF_Pos3_Tex2_Col4> vertices = {
+      { { 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+      { { 1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+      { { 1.0f, 1.0f, 0.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+      { { 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
    };
 
    std::vector<int> indices = { 0, 1, 3, 1, 2, 3 };
@@ -69,10 +69,8 @@ int main()
    Renderer r(win);
 
    auto m = buildTestModel();
-   auto s = ShaderManager::create("assets/shaders.glsl", DiffuseTexture);
-
+   auto s = ShaderManager::create("assets/shaders.glsl", DiffuseTexture|Position3D);
    TextureRequest request(internString("assets/00.png"));
-
    auto t = TextureManager::get(request);
 
    r.beginRender();

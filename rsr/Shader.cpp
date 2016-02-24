@@ -68,7 +68,8 @@ class Shader {
             return 0;
          }
 
-         glBindAttribLocation(handle, (GLuint)VertexAttribute::Pos2, "aPosition");
+         glBindAttribLocation(handle, (GLuint)VertexAttribute::Pos2, "aPosition2");
+         glBindAttribLocation(handle, (GLuint)VertexAttribute::Pos3, "aPosition3");
          glBindAttribLocation(handle, (GLuint)VertexAttribute::Tex2, "aTexCoords");
          glBindAttribLocation(handle, (GLuint)VertexAttribute::Col4, "aColor");
 
@@ -104,6 +105,7 @@ class Shader {
       std::string VertexOption = "#define VERTEX\n";
       std::string FragmentOption = "#define FRAGMENT\n";
       std::string DiffuseTextureOption = "#define DIFFUSE_TEXTURE\n";
+      std::string Position3DOption = "#define POSITION_3D\n";
 
       std::vector<const char*> vertShader, fragShader;
 
@@ -111,6 +113,9 @@ class Shader {
       vertShader.push_back(VertexOption.c_str());
       if (m_params&DiffuseTexture) {
          vertShader.push_back(DiffuseTextureOption.c_str());
+      }
+      if (m_params&Position3D) {
+         vertShader.push_back(Position3DOption.c_str());
       }
       vertShader.push_back(file);
       auto vert = compile(vertShader, GL_VERTEX_SHADER);

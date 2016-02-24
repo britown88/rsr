@@ -28,7 +28,8 @@
    uniform mat4 uModelMatrix;
    uniform vec4 uColorTransform;
 
-   in vec2 aPosition;
+   in vec2 aPosition2;
+   in vec3 aPosition3;
    in vec4 aColor;
 
    out vec4 vColor;
@@ -47,8 +48,13 @@
       coord = uTexMatrix * coord;
       vTexCoords = coord.xy;
       #endif
+
+      #ifdef POSITION_3D
+      vec4 position = vec4(aPosition3, 1);
+      #else
+      vec4 position = vec4(aPosition2, 0, 1);
+      #endif      
       
-      vec4 position = vec4(aPosition, 0, 1);
       gl_Position = uViewMatrix * (uModelMatrix * position);
    }
 #endif

@@ -11,7 +11,8 @@ class Shader;
 typedef uintptr_t Uniform;
 
 enum ShaderParams : int {
-   DiffuseTexture = 1 << 0
+   DiffuseTexture = 1 << 0,
+   Position3D = 1 << 1
 };
 
 class ShaderManager {

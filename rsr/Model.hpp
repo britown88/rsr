@@ -32,6 +32,23 @@ public:
    ColorRGBAf col4;
 };
 
+class FVF_Pos3_Tex2_Col4 {
+public:
+   static std::vector<VertexAttribute> &attrs() {
+      static std::vector<VertexAttribute> out;
+      if (out.empty()) {
+         out = { VertexAttribute::Pos3,
+            VertexAttribute::Tex2,
+            VertexAttribute::Col4 };
+      }
+      return out;
+   }
+
+   Float3 pos3;
+   Float2 tex2;
+   ColorRGBAf col4;
+};
+
 class FVF_Pos2_Col4 {
 public:
    static std::vector<VertexAttribute> &attrs() {

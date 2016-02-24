@@ -13,66 +13,84 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\graphical">
+      <UniqueIdentifier>{2b7baf58-be48-425e-83b5-67b31c4086b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utility">
+      <UniqueIdentifier>{8fbaff53-d00f-4536-879b-6313e7738514}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\platform">
+      <UniqueIdentifier>{027631a8-d395-4eda-8e1e-f9f60c19f0c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphical">
+      <UniqueIdentifier>{e8dc9d57-bb9f-447b-b0df-3b1eb904a634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\platform">
+      <UniqueIdentifier>{ea5303d4-18de-4658-a9b1-8c5dfb43b54f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utility">
+      <UniqueIdentifier>{821b4c7c-eec0-41a2-986d-6a847dc04571}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Geom.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\utility</Filter>
     </ClCompile>
     <ClCompile Include="StringView.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\utility</Filter>
     </ClCompile>
     <ClCompile Include="Model.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\graphical</Filter>
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\graphical</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files\graphical</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\graphical</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\platform</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Geom.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Color.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Defs.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Singleton.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StringView.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="DrawQueue.hpp">
+      <Filter>Header Files\graphical</Filter>
     </ClInclude>
     <ClInclude Include="Model.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DrawQueue.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\graphical</Filter>
     </ClInclude>
     <ClInclude Include="Texture.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.hpp">
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.hpp">
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.hpp">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="StringView.hpp">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Geom.hpp">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Defs.hpp">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.hpp">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.hpp">
+      <Filter>Header Files\platform</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
