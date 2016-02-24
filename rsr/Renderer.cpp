@@ -111,20 +111,20 @@ public:
       });
    }
 
-   //void setTextureSlot(StringView u, TextureSlot const &value) {
-   //   draw([=]() {
-   //      if (m_activeShader) {
-   //         auto uni = ShaderManager::getUniform(m_activeShader, u);
-   //         ShaderManager::setTextureSlot(m_activeShader, uni, value);
-   //      }
-   //   });
-   //}
+   void setTextureSlot(StringView u, TextureSlot const &value) {
+      draw([=]() {
+         if (m_activeShader) {
+            auto uni = ShaderManager::getUniform(m_activeShader, u);
+            ShaderManager::setTextureSlot(m_activeShader, uni, value);
+         }
+      });
+   }
 
-   //void bindTexture(Texture *t, TextureSlot slot) {
-   //   draw([=]() {
-   //      textureBind(t, slot);
-   //   });
-   //}
+   void bindTexture(Texture *t, TextureSlot slot) {
+      draw([=]() {
+         TextureManager::bind(t, slot);
+      });
+   }
 
    void renderModel(Model *m) {
       draw([=]() {
@@ -157,7 +157,7 @@ void Renderer::setFloat2(StringView u, Float2 const &value) { pImpl->setFloat2(u
 void Renderer::setMatrix(StringView u, Matrix const &value) { pImpl->setMatrix(u, value); }
 void Renderer::setColor(StringView u, ColorRGBAf const &value) { pImpl->setColor(u, value); }
 
-//void Renderer::setTextureSlot(StringView u, TextureSlot const &value){pImpl->setTextureSlot(u, value);}
-//void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, slot);}
+void Renderer::setTextureSlot(StringView u, TextureSlot const &value){pImpl->setTextureSlot(u, value);}
+void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, slot);}
 
 void Renderer::renderModel(Model *m) { pImpl->renderModel(m); }

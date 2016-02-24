@@ -169,9 +169,9 @@ public:
    void setColor(Uniform u, ColorRGBAf const &value) {
       glUniform4fv(u, 1, (float*)&value);
    }
-   //void setTexSlot(Uniform u, TextureSlot const &value) {
-   //   glUniform1i(u, value);
-   //}
+   void setTexSlot(Uniform u, TextureSlot const &value) {
+      glUniform1i(u, value);
+   }
 };
 
 Shader *ShaderManager::create(const char *file, int params) {
@@ -187,4 +187,4 @@ Uniform ShaderManager::getUniform(Shader *self, StringView name) { return self->
 void ShaderManager::setFloat2(Shader *self, Uniform u, Float2 const &value) { self->setFloat2(u, value); }
 void ShaderManager::setMatrix(Shader *self, Uniform u, Matrix const &value) { self->setMatrix(u, value); }
 void ShaderManager::setColor(Shader *self, Uniform u, ColorRGBAf const &value) { self->setColor(u, value); }
-//void ShaderManager::setTextureSlot(Shader *self, Uniform u, TextureSlot const &value) { self->setTexSlot(u, value); }
+void ShaderManager::setTextureSlot(Shader *self, Uniform u, TextureSlot const &value) { self->setTexSlot(u, value); }

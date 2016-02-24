@@ -5,11 +5,11 @@
 
 Model *buildTestModel() {
 
-   std::vector<FVF_Pos2_Col4> vertices = {
-      { { 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-      { { 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-      { { 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-      { { 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
+   std::vector<FVF_Pos2_Tex2_Col4> vertices = {
+      { { 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+      { { 1.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+      { { 1.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+      { { 0.0f, 1.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
    };
 
    std::vector<int> indices = { 0, 1, 3, 1, 2, 3 };
@@ -21,7 +21,7 @@ Model *buildTestModel() {
       indices.size());
 }
 
-void testRender(Renderer &r, Shader *s, Model *m) {
+void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
 
    auto uView = internString("uViewMatrix");
    auto uModel = internString("uModelMatrix");
@@ -47,11 +47,11 @@ void testRender(Renderer &r, Shader *s, Model *m) {
    r.setShader(s);
    r.setMatrix(uView, viewTransform);
    r.setMatrix(uModel, modelTransform);
-   //r.setMatrix(uTexture, texTransform);
+   r.setMatrix(uTexture, texTransform);
    r.setColor(uColor, colorTransform);
 
-   //r.bindTexture(m_texture, 0);
-   //r.setTextureSlot(uTextureSlot, 0);
+   r.bindTexture(t, 0);
+   r.setTextureSlot(uTextureSlot, 0);
 
    r.renderModel(m);
 
@@ -69,13 +69,17 @@ int main()
    Renderer r(win);
 
    auto m = buildTestModel();
-   auto s = ShaderManager::create("assets/shaders.glsl", 0);
+   auto s = ShaderManager::create("assets/shaders.glsl", DiffuseTexture);
+
+   TextureRequest request(internString("assets/00.png"));
+
+   auto t = TextureManager::get(request);
 
    r.beginRender();
 
    while (!win->shouldClose()) {
       win->pollEvents();
-      testRender(r, s, m);
+      testRender(r, s, m, t);
       r.flush();
    }
 

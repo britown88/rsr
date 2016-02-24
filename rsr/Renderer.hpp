@@ -36,8 +36,8 @@ public:
    void setMatrix(StringView u, Matrix const &value);
    void setColor(StringView u, ColorRGBAf const &value);
 
-   //void setTextureSlot(StringView u, TextureSlot const &value);
-   //void bindTexture(Texture *t, TextureSlot slot);
+   void setTextureSlot(StringView u, TextureSlot const &value);
+   void bindTexture(Texture *t, TextureSlot slot);
 
    void renderModel(Model *m);
 
