@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="Geom.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
@@ -161,9 +162,11 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Color.hpp" />
     <ClInclude Include="Defs.hpp" />
     <ClInclude Include="DrawQueue.hpp" />
+    <ClInclude Include="Game.hpp" />
     <ClInclude Include="Geom.hpp" />
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="Renderer.hpp" />

@@ -60,6 +60,9 @@
     <ClCompile Include="UBO.cpp">
       <Filter>Source Files\graphical</Filter>
     </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DrawQueue.hpp">
@@ -96,6 +99,12 @@
       <Filter>Header Files\platform</Filter>
     </ClInclude>
     <ClInclude Include="UBO.hpp">
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.hpp">
       <Filter>Header Files\graphical</Filter>
     </ClInclude>
   </ItemGroup>

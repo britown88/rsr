@@ -1,4 +1,5 @@
 #include "Geom.hpp"
+#include "Defs.hpp"
 #include <math.h>
 
 Matrix Matrix::identity() {
@@ -28,7 +29,7 @@ Matrix Matrix::ortho(float left, float right, float bottom, float top, float nea
 Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar) {
    Matrix out = { 0 };
 
-   float f = 1.0f / tanf((fovy * 0.0174533f) / 2.0f);
+   float f = 1.0f / tanf((fovy * DEG2RAD) / 2.0f);
 
    out[0] = f / aspect;
    out[5] = f;

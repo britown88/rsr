@@ -52,9 +52,7 @@ namespace vec
 
    template<typename T>
    Vec3<T> normal(Vec3<T> const &v) {
-      T d = dot(v, v);
-      
-      return mul(v, 1.0f / sqrtf(d));
+      return mul(v, 1.0f / sqrtf(dot(v, v)));
    }
 }
 
