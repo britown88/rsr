@@ -1,4 +1,5 @@
 #include "Geom.hpp"
+#include <math.h>
 
 Matrix Matrix::identity() {
    Matrix out = { 0 };
@@ -24,18 +25,103 @@ Matrix Matrix::ortho(float left, float right, float bottom, float top, float nea
    out[14] = -((far + near) / (far - near));
    return out;
 }
-Matrix Matrix::scale(Float2 const &v) {
+Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar) {
+   Matrix out = { 0 };
+
+   float f = 1.0f / tanf((fovy * 0.0174533f) / 2.0f);
+
+   out[0] = f / aspect;
+   out[5] = f;
+   out[10] = (zFar + zNear) / (zNear - zFar);
+   out[11] = -1.0f;
+   out[14] = (2 * zFar * zNear) / (zNear - zFar);
+
+   return out;
+}
+
+//Matrix frustrum(float left, float right, float bottom, float top, float znear, float zfar)
+//{
+//   Matrix out = { 0 };
+//   float temp, temp2, temp3, temp4;
+//   temp = 2.0 * znear;
+//   temp2 = right - left;
+//   temp3 = top - bottom;
+//   temp4 = zfar - znear;
+//
+//   out[0] = temp / temp2;
+//   out[5] = temp / temp3;
+//   out[8] = (right + left) / temp2;
+//   out[9] = (top + bottom) / temp3;
+//   out[10] = (-zfar - znear) / temp4;
+//   out[11] = -1.0;
+//   out[14] = (-temp * zfar) / temp4;
+//
+//   return out;
+//}
+//
+//Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar)
+//{
+//   float ymax, xmax;
+//   float temp, temp2, temp3, temp4;
+//   ymax = zNear * tanf(fovy * 3.14159265f / 360.0);
+//   xmax = ymax * aspect;
+//   return frustrum(-xmax, xmax, -ymax, ymax, zNear, zFar);
+//}
+
+Matrix Matrix::lookAt(Float3 const &eye, Float3 const &center, Float3 const &up) {
+   Matrix out = { 0 };
+   Float3 n = vec::normal(vec::sub(eye, center));
+   Float3 u = vec::normal(vec::cross(up, n));
+   Float3 v = vec::normal(vec::cross(n, u));
+
+   out[0] = u.x;
+   out[4] = u.y;
+   out[8] = u.z;
+
+   out[1] = v.x;
+   out[5] = v.y;
+   out[9] = v.z;
+
+   out[2] = n.x;
+   out[6] = n.y;
+   out[10] = n.z;
+
+   out[12] = -vec::dot(eye, u);
+   out[13] = -vec::dot(eye, v);
+   out[14] = -vec::dot(eye, n);
+
+   out[15] = 1.0f;
+
+   return out;
+}
+
+Matrix Matrix::scale2f(Float2 const &v) {
    Matrix out = Matrix::identity();
    out[0] = v.x;
    out[5] = v.y;
    return out;
 }
-Matrix Matrix::translate(Float2 const &v) {
+Matrix Matrix::scale3f(Float3 const &v) {
+   Matrix out = Matrix::identity();
+   out[0] = v.x;
+   out[5] = v.y;
+   out[10] = v.z;
+   return out;
+}
+Matrix Matrix::translate2f(Float2 const &v) {
    Matrix out = Matrix::identity();
    out[12] = v.x;
    out[13] = v.y;
    return out;
 }
+Matrix Matrix::translate3f(Float3 const &v) {
+   Matrix out = Matrix::identity();
+   out[12] = v.x;
+   out[13] = v.y;
+   out[14] = v.z;
+   return out;
+}
+
 
 Matrix &Matrix::operator*=(Matrix const &rhs) {
    *this = *this * rhs;

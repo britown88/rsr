@@ -31,18 +31,22 @@ void testRender(Renderer &r, Shader *s, Model *m, Texture *t) {
 
 
    r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
-   r.clear({ 1.0f, 0.0f, 0.0f, 1.0f });
+   r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
 
    Matrix modelTransform =
-      Matrix::translate({ 100.0f, 100.0f }) *
-      Matrix::scale({ 100.0f, 100.0f });
+      //Matrix::translate2f({ 100.0f, 100.0f }) *
+      Matrix::scale3f({ 100.0f, 100.0f, 50.0f });
 
-   Matrix viewTransform =
-      Matrix::ortho(0.0f, (float)r.getWidth(), (float)r.getHeight(), 0.0f, 1.0f, -1.0f);
+   //Matrix viewTransform = Matrix::ortho(0.0f, (float)r.getWidth(), (float)r.getHeight(), 0.0f, 1.0f, -1.0f);
+
+   Matrix persp = Matrix::perspective(90.0f,  4.0f / 3.0f, 0.0001f, 100000.0f);
+   Matrix lookAt = Matrix::lookAt({ 50.0f, 50.0f, 75.0f }, { 50.0f, 50.0f, 25.0f }, { 0.0f, 1.0, 0.0f });
+
+   Matrix viewTransform = persp * lookAt;
 
    Matrix texTransform = Matrix::identity();
 
-   ColorRGBAf colorTransform = { 1.0f, 1.0f, 1.0f, 1.0f };
+   ColorRGBAf colorTransform = { 0.0f, 1.0f, 1.0f, 1.0f };
 
    UBO *ubo = UBOManager::create(sizeof(Matrix));
    r.bindUBO(ubo, 0);

@@ -140,7 +140,7 @@ TextureBuffer loadPng(std::string const& textureFile) {
    }
 
    for (unsigned int i = 0; i < height; ++i) {
-      row_pointers[i] = (unsigned char*)(image_data)+i*(rowbytes);
+      row_pointers[i] = (unsigned char*)(image_data)+(height - i - 1)*(rowbytes);
    }
 
    png_read_image(png_ptr, row_pointers);
