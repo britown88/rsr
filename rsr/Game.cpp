@@ -14,10 +14,10 @@ class Game::Impl {
 
    Model *buildTestModel() {
       std::vector<FVF_Pos3_Tex2_Col4> vertices = {
-         { { 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-         { { 1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-         { { 1.0f, 1.0f, 1.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-         { { 0.0f, 1.0f, 1.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
+         { { -0.5f, -0.5f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+         { { 0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+         { { 0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+         { { -0.5f, 0.5f, 0.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
       };
 
       std::vector<int> indices = { 0, 1, 3, 1, 2, 3 };
@@ -32,16 +32,20 @@ class Game::Impl {
       float aspectRatio = (float)m_window->getWidth() / (float)m_window->getHeight();
 
       m_camera.perspective = Matrix::perspective(
-         140.0f, //fov                                       
+         60.0f, //fov                                       
          aspectRatio, //aspect ratio
          0.01f, // zNear
          FLT_MAX / 2); //zFar
 
-      m_camera.eye = { 50.0f, 50.0f, 75.0f };
-      m_camera.center = { 50.0f, 50.0f, 0.0f };
+      m_camera.eye = { 0.0f, 0.0f, 0.0f };
+      m_camera.center = { 0.0f, 0.0f, 0.0f };
       m_camera.up = { 0.0f, 1.0, 0.0f };
    }
 
+   static const int testBakers = 10000;
+
+   Matrix testBakerModels[testBakers];
+   ColorRGBAf testBakerColors[testBakers];
    
 
 public:
@@ -58,6 +62,14 @@ public:
       m_renderer.bindUBO(m_testUBO, 0);
 
       buildCamera();
+
+      for (int i = 0; i < testBakers; ++i) {
+         testBakerModels[i] =
+            Matrix::translate3f({ (float)((rand() % 200) - 100), (float)((rand() % 200) - 100), (float)((rand() % 300) - 150) }) *
+            Matrix::scale3f({ 50.0f, 50.0f, 50.0f });
+
+         testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
+      }
    }
 
    void onShutdown() {
@@ -68,10 +80,10 @@ public:
       static int i = 0;
       int a = (i++) % 360;
       float rad = a*DEG2RAD;
-      float r = 50.0f;
+      float r = 500.0f;
 
-      m_camera.eye.x = 50.0f + r * cos(rad);
-      m_camera.eye.z = r * sin(rad);
+      m_camera.eye.x = r * cos(rad);
+      m_camera.eye.z = m_camera.eye.y = r * sin(rad);
 
 
    }
@@ -84,29 +96,31 @@ public:
       auto uTexture = internString("uTexMatrix");
       auto uTextureSlot = internString("uTexture");
 
-      r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
-      r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
-
-      Matrix modelTransform = Matrix::scale3f({ 100.0f, 100.0f, 50.0f });
-
       Matrix lookAt = Matrix::lookAt(m_camera.eye, m_camera.center, m_camera.up);
       Matrix viewTransform = m_camera.perspective * lookAt;
 
       Matrix texTransform = Matrix::identity();
 
-      ColorRGBAf colorTransform = { 0.0f, 1.0f, 1.0f, 1.0f };
+
+      r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
+      r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
 
       r.setUBOData(m_testUBO, &viewTransform);
 
       r.setShader(m_testShader);
-      r.setMatrix(uModel, modelTransform);
-      r.setMatrix(uTexture, texTransform);
-      r.setColor(uColor, colorTransform);
 
-      r.bindTexture(m_testTexture, 0);
-      r.setTextureSlot(uTextureSlot, 0);
+      for (int i = 0; i < testBakers; ++i) {
+         r.setMatrix(uModel, testBakerModels[i]);
+         r.setMatrix(uTexture, texTransform);
+         r.setColor(uColor, testBakerColors[i]);
 
-      r.renderModel(m_testModel);
+         r.bindTexture(m_testTexture, 0);
+         r.setTextureSlot(uTextureSlot, 0);
+
+         r.renderModel(m_testModel);
+      }
+
+      
 
       r.finish();
       r.flush();

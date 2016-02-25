@@ -55,6 +55,11 @@ public:
    void beginRender() const {
       m_wnd->beginRender();
       glewInit();
+
+      glEnable(GL_DEPTH_TEST);
+
+      glAlphaFunc(GL_GREATER, 0.5);
+      glEnable(GL_ALPHA_TEST);
    }
 
    //render functions
