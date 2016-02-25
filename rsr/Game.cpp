@@ -42,7 +42,7 @@ class Game::Impl {
       m_camera.up = { 0.0f, 1.0, 0.0f };
    }
 
-   static const int testBakers = 10000;
+   static const int testBakers = 500;
 
    Matrix testBakerModels[testBakers];
    ColorRGBAf testBakerColors[testBakers];
@@ -52,8 +52,10 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      m_testModel = buildTestModel();
-      m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseTexture);
+      m_testModel = ModelManager::importFromOBJ("assets/bunny.obj");
+
+      //m_testModel = buildTestModel();
+      m_testShader = ShaderManager::create("assets/shaders.glsl", 0);
       
       TextureRequest request(internString("assets/00.png"));
       m_testTexture = TextureManager::get(request);
@@ -66,7 +68,7 @@ public:
       for (int i = 0; i < testBakers; ++i) {
          testBakerModels[i] =
             Matrix::translate3f({ (float)((rand() % 200) - 100), (float)((rand() % 200) - 100), (float)((rand() % 300) - 150) }) *
-            Matrix::scale3f({ 50.0f, 50.0f, 50.0f });
+            Matrix::scale3f({ 100.0f, 100.0f, 100.0f });
 
          testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
       }
@@ -80,10 +82,10 @@ public:
       static int i = 0;
       int a = (i++) % 360;
       float rad = a*DEG2RAD;
-      float r = 500.0f;
+      float r = 150.0f;
 
       m_camera.eye.x = r * cos(rad);
-      m_camera.eye.z = m_camera.eye.y = r * sin(rad);
+      m_camera.eye.z = r * sin(rad);
 
 
    }

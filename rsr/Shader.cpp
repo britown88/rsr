@@ -72,6 +72,7 @@ class Shader {
          glBindAttribLocation(handle, (GLuint)VertexAttribute::Pos3, "aPosition3");
          glBindAttribLocation(handle, (GLuint)VertexAttribute::Tex2, "aTexCoords");
          glBindAttribLocation(handle, (GLuint)VertexAttribute::Col4, "aColor");
+         glBindAttribLocation(handle, (GLuint)VertexAttribute::Norm3,"aNormal");
 
          glAttachShader(handle, vertex);
          glAttachShader(handle, fragment);
