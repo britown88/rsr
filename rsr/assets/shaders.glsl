@@ -2,6 +2,7 @@
    out vec4 outColor;
    smooth in vec4 vColor;
 
+
    #ifdef DIFFUSE_TEXTURE
    uniform sampler2D uTexture;
    smooth in vec2 vTexCoords;
@@ -21,6 +22,7 @@
 #ifdef VERTEX
    layout(std140, binding = 0) uniform uboView{
       mat4 uViewMatrix;
+	  vec3 uLightDirection;
    };
 
    uniform mat4 uModelMatrix;
@@ -29,6 +31,7 @@
    in vec2 aPosition2;
    in vec3 aPosition3;
    in vec4 aColor;
+   in vec3 aNormal;
 
    out vec4 vColor;
 
@@ -39,7 +42,13 @@
    #endif
 
    void main() {
+	  
       vColor = aColor * uColorTransform;
+
+	  #ifdef DIFFUSE_LIGHTING
+	  float dotl = max(dot(aNormal, -uLightDirection), 0.0);
+	  vColor = vec4(vColor.xyz * dotl, vColor.w);
+	  #endif
       
       #ifdef DIFFUSE_TEXTURE
       vec4 coord = vec4(aTexCoords, 0.0, 1.0);

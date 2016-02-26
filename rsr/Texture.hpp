@@ -21,7 +21,7 @@ struct TextureRequest {
    FilterType filterType;
    StringView path;
 
-   TextureRequest(StringView path, RepeatType repeat = RepeatType::Clamp, FilterType filter = FilterType::Nearest);
+   TextureRequest(StringView path, RepeatType repeat = RepeatType::Clamp, FilterType filter = FilterType::Linear);
    bool operator==(const TextureRequest &rhs)const;
    size_t hash() const;
 };

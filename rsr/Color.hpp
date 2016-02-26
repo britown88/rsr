@@ -18,3 +18,7 @@ struct ColorRGBAf {
    float r, g, b, a;
 };
 
+namespace CommonColors {
+   static const ColorRGBAf White = { 1.0f, 1.0f, 1.0f, 1.0f };
+}
+

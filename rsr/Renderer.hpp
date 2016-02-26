@@ -34,6 +34,8 @@ public:
    void clear(ColorRGBAf const &c);
    void viewport(Recti const &r);
 
+   void enableDepth(bool enabled);
+
    void setShader(Shader *s);
    void setFloat2(StringView u, Float2 const &value);
    void setMatrix(StringView u, Matrix const &value);

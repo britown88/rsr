@@ -77,6 +77,7 @@ public:
             totalOffset += sizeof(Float2);
             break;
          case VertexAttribute::Pos3:
+         case VertexAttribute::Norm3:
             count = 3;
             totalOffset += sizeof(Float3);
             break;

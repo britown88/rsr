@@ -56,10 +56,22 @@ public:
       m_wnd->beginRender();
       glewInit();
 
-      glEnable(GL_DEPTH_TEST);
+      
+   }
 
-      glAlphaFunc(GL_GREATER, 0.5);
-      glEnable(GL_ALPHA_TEST);
+   void enableDepth(bool enabled) {
+      draw([=]() {
+
+         if (enabled) {
+            glEnable(GL_DEPTH_TEST);
+            glAlphaFunc(GL_GREATER, 0.5);
+            glEnable(GL_ALPHA_TEST);
+         }
+         else {
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_ALPHA_TEST);
+         }
+      });
    }
 
    //render functions
@@ -173,6 +185,8 @@ void Renderer::setShader(Shader *s) { pImpl->setShader(s); }
 void Renderer::setFloat2(StringView u, Float2 const &value) { pImpl->setFloat2(u, value); }
 void Renderer::setMatrix(StringView u, Matrix const &value) { pImpl->setMatrix(u, value); }
 void Renderer::setColor(StringView u, ColorRGBAf const &value) { pImpl->setColor(u, value); }
+
+void Renderer::enableDepth(bool enabled) { pImpl->enableDepth(enabled); }
 
 void Renderer::setTextureSlot(StringView u, TextureSlot const &value){pImpl->setTextureSlot(u, value);}
 void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, slot);}

@@ -19,6 +19,7 @@ int main()
    while (!win->shouldClose()) {      
       g.onStep();
       win->pollEvents();
+
    }
 
    g.onShutdown();

@@ -67,6 +67,7 @@ struct OBJData {
 
    char line[256];
    TokenList tokens;
+   int vIndex = 0;
 };
 
 static void read(TokenList &tokens, OBJData &data) {
@@ -87,44 +88,161 @@ static void read(TokenList &tokens, OBJData &data) {
    }
 }
 
+template<typename T>
+void calculateNormals(std::vector<T> &vertices, std::vector<int> &indices, std::vector<Float3> &normals, std::vector<int> &normalCounts) {
+   for (int i = 0; i < indices.size() / 3; ++i) {
+      int i1 = indices[i * 3 + 0];
+      int i2 = indices[i * 3 + 1];
+      int i3 = indices[i * 3 + 2];
+
+      Float3 v1 = vertices[i1].pos3;
+      Float3 v2 = vertices[i2].pos3;
+      Float3 v3 = vertices[i3].pos3;
+
+      Float3 normal = vec::normal(vec::cross(vec::sub(v2, v1), vec::sub(v3, v1)));
+
+      normals[i1] = vec::add(normals[i1], normal);
+      normals[i2] = vec::add(normals[i2], normal);
+      normals[i3] = vec::add(normals[i3], normal);
+
+      ++normalCounts[i1];
+      ++normalCounts[i2];
+      ++normalCounts[i3];
+   }
+}
+
+void addPosCol(OBJData &data, std::vector<FVF_Pos3_Col4> &vertices, std::vector<int> &indices) {
+   if (data.tokens.size() == 4 && data.tokens[0] == "f") {
+      for (int i = 0; i < 3; ++i) {
+         int index = readInt(data.tokens[1 + i]) - 1;
+         indices.push_back(index);
+      }
+   }
+}
 Model *buildPosCol(OBJData &data) {
    std::vector<FVF_Pos3_Col4> vertices;
    std::vector<int> indices;
-   ColorRGBAf white = { 1.0f, 1.0f, 1.0f, 1.0f };
 
    int index = 0;
    for(auto &pos : data.positions) {
-      vertices.push_back({ pos, data.hasColor ? data.colors[index++] : white });
+      vertices.push_back({ pos, data.hasColor ? data.colors[index++] : CommonColors::White });
    }
 
-   int vIndex = 0;
+   addPosCol(data, vertices, indices);
    while (fgets(data.line, sizeof(data.line), data.file)) {
       split(data.line, data.tokens);
-      if (data.tokens.size() == 4 && data.tokens[0] == "f") {
-         for (int i = 0; i < 3; ++i) {
-            int index = readInt(data.tokens[1 + i]) - 1;
-            indices.push_back(index);
-         }
-      }
+      addPosCol(data, vertices, indices);
    }
-   return ModelManager::create( vertices.data(), vertices.size(), indices.data(), indices.size());
+
+   std::vector<Float3> normals(vertices.size());;
+   std::vector<int> normalCounts(vertices.size());
+
+   calculateNormals(vertices, indices, normals, normalCounts);
+
+   std::vector<FVF_Pos3_Norm3_Col4> normVertices;
+   for (int i = 0; i < vertices.size(); ++i) {
+      FVF_Pos3_Col4 &old = vertices[i];
+
+      Float3 normal;
+
+      if (normalCounts[i] > 0) {
+         normal = vec::mul(normals[i], 1.0f / normalCounts[i]);
+      }
+
+      normVertices.push_back({ old.pos3, normal, old.col4 });
+   }
+
+   return ModelManager::create(normVertices.data(), normVertices.size(), indices.data(), indices.size());
 }
 
+void addPosTexCol(OBJData &data, std::vector<FVF_Pos3_Tex2_Col4> &vertices, std::vector<int> &indices) {
+   if (data.tokens.size() == 7 && data.tokens[0] == "f") {
+      for (int i = 0; i < 3; ++i) {
+         int pindex = readInt(data.tokens[1 + i*2]) - 1;
+         int tindex = readInt(data.tokens[2 + i*2]) - 1;
+         
+         vertices.push_back({ data.positions[pindex], data.textures[tindex], data.hasColor ? data.colors[pindex] : CommonColors::White });
+         indices.push_back(data.vIndex++);
+      }
+   }
+}
 Model *buildPosTexCol(OBJData &data) {
    std::vector<FVF_Pos3_Tex2_Col4> vertices;
    std::vector<int> indices;
-   return ModelManager::create(vertices.data(), vertices.size(), indices.data(), indices.size());
+
+   addPosTexCol(data, vertices, indices);
+   while (fgets(data.line, sizeof(data.line), data.file)) {
+      split(data.line, data.tokens);
+      addPosTexCol(data, vertices, indices);
+   }
+
+   std::vector<Float3> normals(vertices.size());;
+   std::vector<int> normalCounts(vertices.size());
+
+   calculateNormals(vertices, indices, normals, normalCounts);
+
+   std::vector<FVF_Pos3_Norm3_Tex2_Col4> normVertices;
+   for (int i = 0; i < vertices.size(); ++i) {
+      FVF_Pos3_Tex2_Col4 &old = vertices[i];
+
+      Float3 normal;
+
+      if (normalCounts[i] > 0) {
+         normal = vec::mul(normals[i], 1.0f / normalCounts[i]);
+      }
+
+      normVertices.push_back({old.pos3, normal, old.tex2, old.col4});
+   }
+
+   return ModelManager::create(normVertices.data(), normVertices.size(), indices.data(), indices.size());
 }
 
+void addPosNormTexCol(OBJData &data, std::vector<FVF_Pos3_Norm3_Tex2_Col4> &vertices, std::vector<int> &indices) {
+   if (data.tokens.size() == 7 && data.tokens[0] == "f") {
+      for (int i = 0; i < 3; ++i) {
+         int pindex = readInt(data.tokens[1 + i * 3]) - 1;
+         int tindex = readInt(data.tokens[2 + i * 3]) - 1;
+         int nindex = readInt(data.tokens[3 + i * 3]) - 1;
+
+         vertices.push_back({ data.positions[pindex], data.normals[nindex], data.textures[tindex], data.hasColor ? data.colors[pindex] : CommonColors::White });
+         indices.push_back(data.vIndex++);
+      }
+   }
+}
 Model *buildPosNormTexCol(OBJData &data) {
    std::vector<FVF_Pos3_Norm3_Tex2_Col4> vertices;
    std::vector<int> indices;
+
+   addPosNormTexCol(data, vertices, indices);
+   while (fgets(data.line, sizeof(data.line), data.file)) {
+      split(data.line, data.tokens);
+      addPosNormTexCol(data, vertices, indices);
+   }
+
    return ModelManager::create(vertices.data(), vertices.size(), indices.data(), indices.size());
 }
 
+void addPosNormCol(OBJData &data, std::vector<FVF_Pos3_Norm3_Col4> &vertices, std::vector<int> &indices) {
+   if (data.tokens.size() == 7 && data.tokens[0] == "f") {
+      for (int i = 0; i < 3; ++i) {
+         int pindex = readInt(data.tokens[1 + i * 2]) - 1;
+         int nindex = readInt(data.tokens[2 + i * 2]) - 1;
+
+         vertices.push_back({ data.positions[pindex], data.normals[nindex], data.hasColor ? data.colors[pindex] : CommonColors::White });
+         indices.push_back(data.vIndex++);
+      }
+   }
+}
 Model *buildPosNormCol(OBJData &data) {
    std::vector<FVF_Pos3_Norm3_Col4> vertices;
    std::vector<int> indices;
+
+   addPosNormCol(data, vertices, indices);
+   while (fgets(data.line, sizeof(data.line), data.file)) {
+      split(data.line, data.tokens);
+      addPosNormCol(data, vertices, indices);
+   }
+
    return ModelManager::create(vertices.data(), vertices.size(), indices.data(), indices.size());
 }
 
