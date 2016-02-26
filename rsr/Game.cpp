@@ -67,7 +67,7 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      m_testModel = ModelManager::importFromOBJ("assets/dragon.obj");
+      m_testModel = ModelManager::importFromOBJ("assets/vanquish.obj");
 
       //m_testModel = buildTestModel();
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
@@ -80,10 +80,12 @@ public:
 
       buildCamera();
 
+      float size = 100.0f;
+
       for (int i = 0; i < testBakers; ++i) {
          testBakerModels[i] =
             //Matrix::translate3f({ (float)((rand() % 300) - 150), (float)((rand() % 300) - 150), (float)((rand() % 300) - 150) }) *
-            Matrix::scale3f({ 10.0f, 10.0f, 10.0f });
+            Matrix::scale3f({ size, size, size });
 
          testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
       }
