@@ -1,7 +1,12 @@
 #ifdef FRAGMENT
+   layout(std140, binding = 0) uniform uboView{
+      mat4 uViewMatrix;
+	  vec3 uLightDirection;
+   };
+
    out vec4 outColor;
    smooth in vec4 vColor;
-
+   smooth in vec3 vNormal;
 
    #ifdef DIFFUSE_TEXTURE
    uniform sampler2D uTexture;
@@ -10,6 +15,11 @@
 
    void main(){   
       vec4 color = vColor;
+
+	  #ifdef DIFFUSE_LIGHTING
+	  float dotl = max(dot(vNormal, -uLightDirection), 0.0);
+	  color = vec4(color.rgb * dotl, color.a);
+	  #endif
       
       #ifdef DIFFUSE_TEXTURE
       color *= texture(uTexture, vTexCoords);
@@ -34,6 +44,7 @@
    in vec3 aNormal;
 
    out vec4 vColor;
+   out vec3 vNormal;
 
    #ifdef DIFFUSE_TEXTURE
    uniform mat4 uTexMatrix;
@@ -46,8 +57,7 @@
       vColor = aColor * uColorTransform;
 
 	  #ifdef DIFFUSE_LIGHTING
-	  float dotl = max(dot(aNormal, -uLightDirection), 0.0);
-	  vColor = vec4(vColor.xyz * dotl, vColor.w);
+	  vNormal = aNormal;
 	  #endif
       
       #ifdef DIFFUSE_TEXTURE

@@ -130,6 +130,9 @@ class Shader {
       if (m_params&DiffuseTexture) {
          fragShader.push_back(DiffuseTextureOption.c_str());
       }
+      if (m_params&DiffuseLighting) {
+         fragShader.push_back(DiffuseLightingOption.c_str());
+      }
       fragShader.push_back(file);
       auto frag = compile(fragShader, GL_FRAGMENT_SHADER);
 
