@@ -70,7 +70,7 @@ public:
       //m_testModel = buildTestModel();
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
       
-      TextureRequest request(internString("assets/00.png"));
+      TextureRequest request(internString("assets/skybox_texture.png"));
       m_testTexture = TextureManager::get(request);
 
       m_testUBO = UBOManager::create(sizeof(TestUBO));
