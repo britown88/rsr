@@ -57,7 +57,7 @@ class Game::Impl {
       m_camera.up = { 0.0f, 1.0, 0.0f };
    }
 
-   static const int testBakers = 250;
+   static const int testBakers = 1;
 
    Matrix testBakerModels[testBakers];
    ColorRGBAf testBakerColors[testBakers];
@@ -67,7 +67,7 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      m_testModel = ModelManager::importFromOBJ("assets/bunny.obj");
+      m_testModel = ModelManager::importFromOBJ("assets/dragon.obj");
 
       //m_testModel = buildTestModel();
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
@@ -82,8 +82,8 @@ public:
 
       for (int i = 0; i < testBakers; ++i) {
          testBakerModels[i] =
-            Matrix::translate3f({ (float)((rand() % 300) - 150), (float)((rand() % 300) - 150), (float)((rand() % 300) - 150) }) *
-            Matrix::scale3f({ 150.0f, 150.0f, 150.0f });
+            //Matrix::translate3f({ (float)((rand() % 300) - 150), (float)((rand() % 300) - 150), (float)((rand() % 300) - 150) }) *
+            Matrix::scale3f({ 10.0f, 10.0f, 10.0f });
 
          testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
       }
@@ -106,7 +106,7 @@ public:
 
          m_camera.eye.x = r * cos(rad);
          m_camera.eye.z = r * sin(rad);
-         m_camera.eye.y = m_camera.eye.z / 4;
+         m_camera.eye.y = m_camera.eye.z / 1.5f;
       }
 
 
@@ -143,7 +143,7 @@ public:
       r.setColor(uColor, CommonColors::White);
       r.bindTexture(m_sbtex, 0);
       r.setTextureSlot(uTextureSlot, 0);
-      //r.renderModel(m_msb);
+      r.renderModel(m_msb);
 
 
       r.enableDepth(true);

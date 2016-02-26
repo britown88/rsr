@@ -4,7 +4,7 @@
 
 int main()
 {
-   Window *win = Window::create(640, 480, "Test!", 0);
+   Window *win = Window::create(1920, 1080, "Test!", 0);
 
    if (!win) {
       return 0;

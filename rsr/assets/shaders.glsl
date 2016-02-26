@@ -25,22 +25,28 @@ struct Camera{
    void main(){   
       vec4 color = vColor;
 
+	  #ifdef DIFFUSE_TEXTURE
+      color *= texture(uTexture, vTexCoords);
+      #endif
+
 	  #ifdef DIFFUSE_LIGHTING
 	  //diffuse
+
+	  vec3 lcolor = color.rgb;
+
 	  float dotl = max(dot(vNormal, -uLightDirection), 0.0);
-	  color = vec4(vColor.rgb * dotl, vColor.a);
+	  color.rgb = lcolor * dotl;
 
 	  //specular
 	  vec3 reflected = reflect(-uLightDirection, vNormal);
-	  float dotspc = max(dot(uCamera.dir, reflected), 0.0);
-	  color += vec4(vColor.rgb * pow(dotspc, 8.0), 0.0);
+	  float dotspc = pow(max(dot(uCamera.dir, reflected), 0.0), 8.0);
+
+	  color.rgb += lcolor * dotspc;
 	  
-	  color = vec4(vec3(1,1,1)*pow(dotspc,8), 1);
+	  //color = vec4(vec3(1,1,1)*dotspc, 1);
 	  #endif
       
-      #ifdef DIFFUSE_TEXTURE
-      color *= texture(uTexture, vTexCoords);
-      #endif
+      
       
       outColor = color;
    }
