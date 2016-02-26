@@ -4,6 +4,8 @@
 struct TestUBO {
    Matrix view;
    Float3 light;
+   float foo;
+   Camera c;
 };
 
 class Game::Impl {
@@ -81,7 +83,7 @@ public:
       for (int i = 0; i < testBakers; ++i) {
          testBakerModels[i] =
             Matrix::translate3f({ (float)((rand() % 300) - 150), (float)((rand() % 300) - 150), (float)((rand() % 300) - 150) }) *
-            Matrix::scale3f({ 100.0f, 100.0f, 100.0f });
+            Matrix::scale3f({ 150.0f, 150.0f, 150.0f });
 
          testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
       }
@@ -100,7 +102,7 @@ public:
          static int i = 0;
          int a = ((i++) % 360);
          float rad = a*DEG2RAD;
-         float r = 50.0f + 250.0f * fabs( sin(rad));
+         float r = 250.0f;
 
          m_camera.eye.x = r * cos(rad);
          m_camera.eye.z = r * sin(rad);
@@ -127,11 +129,11 @@ public:
 
 
       r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
-      r.clear({ 1.0f, 1.0f, 1.0f, 1.0f });
+      r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
 
       TestUBO cameraUbo;
       cameraUbo.view = m_camera.perspective * Matrix::lookAt(Float3(), vec::sub(m_camera.center, m_camera.eye), m_camera.up);
-      r.setUBOData(m_testUBO, &cameraUbo);
+      r.setUBOData(m_testUBO, cameraUbo);
 
       r.enableDepth(false);
 
@@ -141,7 +143,7 @@ public:
       r.setColor(uColor, CommonColors::White);
       r.bindTexture(m_sbtex, 0);
       r.setTextureSlot(uTextureSlot, 0);
-      r.renderModel(m_msb);
+      //r.renderModel(m_msb);
 
 
       r.enableDepth(true);
@@ -150,7 +152,10 @@ public:
       m_u.view = m_camera.perspective * lookAt;
       m_u.light = { 0.0f, -1.0f, 0.0f };
 
-      r.setUBOData(m_testUBO, &m_u);
+      m_camera.dir = vec::normal(vec::sub(m_camera.center, m_camera.eye));
+      m_u.c = m_camera;
+
+      r.setUBOData(m_testUBO, m_u);
 
       r.setShader(m_testShader);
       for (int i = 0; i < testBakers; ++i) {

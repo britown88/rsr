@@ -45,8 +45,8 @@ public:
    void bindTexture(Texture *t, TextureSlot slot);
 
    template<typename T>
-   void setUBOData(UBO *ubo, T *value) {
-      _setUBOData(ubo, 0, sizeof(T), value);
+   void setUBOData(UBO *ubo, T &value) {
+      _setUBOData(ubo, 0, sizeof(T), &value);
    }
    void bindUBO(UBO *ubo, UBOSlot slot);
 

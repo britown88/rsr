@@ -1,7 +1,16 @@
+struct Camera{
+	vec3 eye;
+	vec3 center;
+	vec3 up;
+	vec3 dir;
+	mat4 persp;
+};
+
 #ifdef FRAGMENT
    layout(std140, binding = 0) uniform uboView{
       mat4 uViewMatrix;
 	  vec3 uLightDirection;
+	  Camera uCamera;
    };
 
    out vec4 outColor;
@@ -17,8 +26,16 @@
       vec4 color = vColor;
 
 	  #ifdef DIFFUSE_LIGHTING
+	  //diffuse
 	  float dotl = max(dot(vNormal, -uLightDirection), 0.0);
-	  color = vec4(color.rgb * dotl, color.a);
+	  color = vec4(vColor.rgb * dotl, vColor.a);
+
+	  //specular
+	  vec3 reflected = reflect(-uLightDirection, vNormal);
+	  float dotspc = max(dot(uCamera.dir, reflected), 0.0);
+	  color += vec4(vColor.rgb * pow(dotspc, 8.0), 0.0);
+	  
+	  color = vec4(vec3(1,1,1)*pow(dotspc,8), 1);
 	  #endif
       
       #ifdef DIFFUSE_TEXTURE
@@ -33,6 +50,7 @@
    layout(std140, binding = 0) uniform uboView{
       mat4 uViewMatrix;
 	  vec3 uLightDirection;
+	  Camera uCamera;
    };
 
    uniform mat4 uModelMatrix;
@@ -71,7 +89,7 @@
       #else
 	  vec4 position = vec4(aPosition3, 1);
       #endif      
-      
-      gl_Position = uViewMatrix * (uModelMatrix * position);
+
+      gl_Position = uViewMatrix * (uModelMatrix * position);;
    }
 #endif
