@@ -155,12 +155,20 @@ public:
       });
    }
 
+   void bindCubeMap(CubeMap *cm, TextureSlot slot) {
+      draw([=]() {
+         CubeMapManager::bind(cm, slot);
+      });
+   }
+
    void renderModel(Model *m) {
       draw([=]() {
          if (m != m_activeModel) {
             ModelManager::bind(m);
             m_activeModel = m;
          }
+
+
 
          ModelManager::draw(m);
       });
@@ -193,5 +201,6 @@ void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, s
 
 void Renderer::_setUBOData(UBO *ubo, size_t offset, size_t size, void *data) { pImpl->setUBOData(ubo, offset, size, data); }
 void Renderer::bindUBO(UBO *ubo, UBOSlot slot) { pImpl->bindUBO(ubo, slot); }
+void Renderer::bindCubeMap(CubeMap *cm, TextureSlot slot) { pImpl->bindCubeMap(cm, slot); }
 
 void Renderer::renderModel(Model *m) { pImpl->renderModel(m); }

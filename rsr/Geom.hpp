@@ -1,5 +1,8 @@
 #pragma once
 
+float linterp(float f1, float f2, float t);
+float cinterp(float f1, float f2, float f3, float f4, float t);
+
 template<typename T>
 struct Vec2 {
    T x, y;
@@ -45,8 +48,34 @@ namespace vec
    }
 
    template<typename T>
+   Vec3<T> negate(Vec3<T> const &v) {
+      Vec3<T> out = { -v.x, -v.y, -v.z };
+      return out;
+   }
+
+   template<typename T>
    Vec3<T> mul(Vec3<T> const &v, T s) {
       Vec3<T> out = { v.x * s, v.y * s, v.z * s };
+      return out;
+   }
+
+   template<typename T>
+   Vec3<T> linterp(Vec3<T> const &v1, Vec3<T> const &v2, float t) {
+      Vec3<T> out = { 
+         ::linterp(v1.x, v2.x, t),
+         ::linterp(v1.y, v2.y, t),
+         ::linterp(v1.z, v2.z, t),
+         };
+      return out;
+   }
+
+   template<typename T>
+   Vec3<T> cinterp(Vec3<T> const &v1, Vec3<T> const &v2, Vec3<T> const &v3, Vec3<T> const &v4, float t) {
+      Vec3<T> out = {
+         ::cinterp(v1.x, v2.x, v3.x, v4.x, t),
+         ::cinterp(v1.y, v2.y, v3.y, v4.y, t),
+         ::cinterp(v1.z, v2.z, v3.z, v4.z, t),
+      };
       return out;
    }
 
@@ -55,8 +84,6 @@ namespace vec
       return mul(v, 1.0f / sqrtf(dot(v, v)));
    }
 }
-
-
 
 template<typename T>
 struct Rect {
@@ -88,7 +115,25 @@ public:
    Matrix &operator*=(Matrix const &rhs);
    Matrix operator*(Matrix const &rhs) const;
 
+   Float3 operator*(Float3 const &rhs) const;
+
    float &operator[](size_t index);
    float const &operator[](size_t index) const;
 
 };
+
+struct Quaternion {
+   Float3 xyz;
+   float w;
+
+   static Quaternion fromAxisAngle(Float3 axis, float angle);
+   static Quaternion unit();
+   Matrix toMatrix();
+   Float3 rotate(Float3 &pt);
+};
+
+
+
+
+
+

@@ -66,6 +66,12 @@
     <ClCompile Include="OBJ.cpp">
       <Filter>Source Files\graphical</Filter>
     </ClCompile>
+    <ClCompile Include="CubeMap.cpp">
+      <Filter>Source Files\graphical</Filter>
+    </ClCompile>
+    <ClCompile Include="Track.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DrawQueue.hpp">
@@ -110,9 +116,18 @@
     <ClInclude Include="Camera.hpp">
       <Filter>Header Files\graphical</Filter>
     </ClInclude>
+    <ClInclude Include="CubeMap.hpp">
+      <Filter>Header Files\graphical</Filter>
+    </ClInclude>
+    <ClInclude Include="Track.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="assets\skybox.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

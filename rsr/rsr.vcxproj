@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Geom.cpp" />
     <ClCompile Include="main.cpp" />
@@ -159,12 +160,14 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="StringView.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Track.cpp" />
     <ClCompile Include="UBO.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Color.hpp" />
+    <ClInclude Include="CubeMap.hpp" />
     <ClInclude Include="Defs.hpp" />
     <ClInclude Include="DrawQueue.hpp" />
     <ClInclude Include="Game.hpp" />
@@ -175,6 +178,7 @@
     <ClInclude Include="Singleton.hpp" />
     <ClInclude Include="StringView.hpp" />
     <ClInclude Include="Texture.hpp" />
+    <ClInclude Include="Track.hpp" />
     <ClInclude Include="UBO.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
@@ -185,6 +189,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders.glsl" />
+    <None Include="assets\skybox.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,6 +4,31 @@
 
 #include <stdint.h>
 
+#include "Color.hpp"
+#include "Geom.hpp"
+#include <memory>
+#include <string>
+
+struct TextureBuffer {
+   std::unique_ptr<ColorRGBA[]> bits;
+   Int2 size;
+
+   TextureBuffer() {}
+
+   TextureBuffer(std::unique_ptr<ColorRGBA[]> bits, Int2 size)
+      :bits(std::move(bits)), size(size) {}
+
+   TextureBuffer(TextureBuffer && rhs)
+      :bits(std::move(rhs.bits)), size(rhs.size) {}
+   TextureBuffer &operator=(TextureBuffer && rhs) {
+      bits = std::move(rhs.bits);
+      size = rhs.size;
+      return *this;
+   }
+};
+
+TextureBuffer loadPng(std::string const& textureFile);
+
 typedef uintptr_t TextureSlot;
 
 enum RepeatType : unsigned int {

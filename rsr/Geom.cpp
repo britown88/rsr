@@ -150,9 +150,81 @@ Matrix Matrix::operator*(Matrix const &rhs) const {
    return out;
 }
 
+Float3 Matrix::operator*(Float3 const &rhs) const {
+   Float3 out;
+   
+   out.x = (data[0] * rhs.x) + (data[5] * rhs.x) + (data[9] * rhs.x) + (data[13] * rhs.x);
+   out.y = (data[1] * rhs.y) + (data[6] * rhs.y) + (data[10] * rhs.y) + (data[14] * rhs.y);
+   out.z = (data[2] * rhs.z) + (data[7] * rhs.z) + (data[11] * rhs.z) + (data[15] * rhs.z);
+
+   return out;
+}
+
 float &Matrix::operator[](size_t index) {
    return data[index];
 }
 float const &Matrix::operator[](size_t index) const {
    return data[index];
 }
+
+Quaternion Quaternion::fromAxisAngle(Float3 axis, float angle) {
+   float halfAngle = angle / 2;
+   float sinHalfAngle = (float)sin(halfAngle);
+
+   return { 
+      { 
+         axis.x * sinHalfAngle,
+         axis.y * sinHalfAngle,
+         axis.z * sinHalfAngle
+      },
+      (float)cos(halfAngle)
+   };
+}
+
+Quaternion Quaternion::unit() {
+   return { {0.0f, 0.0f, 0.0f}, 1.0f };
+}
+
+Matrix Quaternion::toMatrix() {
+   float &qx = xyz.x;
+   float &qy = xyz.y;
+   float &qz = xyz.z;
+   float &qw = w;
+
+   return {
+      1 - 2 * qy*qy - 2 * qz*qz, 2 * qx*qy - 2 * qz*qw,     2 * qx*qz + 2 * qy*qw,     0.0f,
+      2 * qx*qy + 2 * qz*qw,     1 - 2 * qx*qx - 2 * qz*qz, 2 * qy*qz - 2 * qx*qw,     0.0f,
+      2 * qx*qz - 2 * qy*qw,     2 * qy*qz + 2 * qx*qw,     1 - 2 * qx*qx - 2 * qy*qy, 0.0f,
+      0.0f,                      0.0f,                      0.0f,                      1.0f
+   };
+}
+
+Float3 Quaternion::rotate(Float3 &pt)  {
+   float x1 = xyz.y*pt.z - xyz.z*pt.y;
+   float y1 = xyz.z*pt.x - xyz.x*pt.z;
+   float z1 = xyz.x*pt.y - xyz.y*pt.x;
+
+   float x2 = w*x1 + xyz.y*z1 - xyz.z*y1;
+   float y2 = w*y1 + xyz.z*x1 - xyz.x*z1;
+   float z2 = w*z1 + xyz.x*y1 - xyz.y*x1;
+
+   return { pt.x + 2.0f*x2 , pt.y + 2.0f*y2, pt.z + 2.0f*z2 };
+}
+
+float linterp(float f1, float f2, float t) {
+   return f1 + (f2 - f1) * t;
+}
+
+float cinterp(float y0, float y1, float y2, float y3, float mu) {
+   float a0, a1, a2, a3, mu2;
+
+   mu2 = mu*mu;
+   a0 = y3 - y2 - y0 + y1;
+   a1 = y0 - y1 - a0;
+   a2 = y2 - y0;
+   a3 = y1;
+
+   return(a0*mu*mu2 + a1*mu2 + a2*mu + a3);
+
+}
+

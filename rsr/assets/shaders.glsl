@@ -5,22 +5,26 @@ struct Camera{
 	vec3 dir;
 	mat4 persp;
 };
+layout(std140, binding = 0) uniform uboView{
+    mat4 uViewMatrix;
+	vec3 uLightDirection;
+	float uLightAmbient;
+	Camera uCamera;
+};
 
 #ifdef FRAGMENT
-   layout(std140, binding = 0) uniform uboView{
-      mat4 uViewMatrix;
-	  vec3 uLightDirection;
-	  Camera uCamera;
-   };
 
    out vec4 outColor;
    smooth in vec4 vColor;
    smooth in vec3 vNormal;
+   smooth in vec3 vPosition;
 
    #ifdef DIFFUSE_TEXTURE
    uniform sampler2D uTexture;
    smooth in vec2 vTexCoords;
    #endif
+
+   uniform samplerCube uSkybox;
 
    void main(){   
       vec4 color = vColor;
@@ -29,13 +33,20 @@ struct Camera{
       color *= texture(uTexture, vTexCoords);
       #endif
 
+	  vec3 I = normalize(vPosition - uCamera.eye);
+	  vec3 R = reflect(I, normalize(vNormal));
+      //color.rgb *= texture(uSkybox, R).rgb;
+
 	  #ifdef DIFFUSE_LIGHTING
-	  //diffuse
-
 	  vec3 lcolor = color.rgb;
+	  color.rgb = vec3(0,0,0);
 
+	  //ambient
+	  color.rgb += lcolor * vec3(uLightAmbient, uLightAmbient, uLightAmbient);
+
+	  //diffuse
 	  float dotl = max(dot(vNormal, -uLightDirection), 0.0);
-	  color.rgb = lcolor * dotl;
+	  color.rgb += lcolor * dotl;
 
 	  //specular
 	  vec3 reflected = reflect(-uLightDirection, vNormal);
@@ -44,21 +55,14 @@ struct Camera{
 	  color.rgb += lcolor * dotspc;
 	  
 	  //color = vec4(vec3(1,1,1)*dotspc, 1);
+	  //color.rgb = texture(uSkybox, R).rgb;
 	  #endif
-      
-      
       
       outColor = color;
    }
 #endif
 
 #ifdef VERTEX
-   layout(std140, binding = 0) uniform uboView{
-      mat4 uViewMatrix;
-	  vec3 uLightDirection;
-	  Camera uCamera;
-   };
-
    uniform mat4 uModelMatrix;
    uniform vec4 uColorTransform;
 
@@ -67,6 +71,7 @@ struct Camera{
    in vec4 aColor;
    in vec3 aNormal;
 
+   out vec3 vPosition;
    out vec4 vColor;
    out vec3 vNormal;
 
@@ -81,7 +86,8 @@ struct Camera{
       vColor = aColor * uColorTransform;
 
 	  #ifdef DIFFUSE_LIGHTING
-	  vNormal = aNormal;
+	 // vNormal = mat3(transpose(inverse(uModelMatrix))) * aNormal; 
+	  vNormal = aNormal; 
 	  #endif
       
       #ifdef DIFFUSE_TEXTURE
@@ -96,6 +102,8 @@ struct Camera{
 	  vec4 position = vec4(aPosition3, 1);
       #endif      
 
+	  vPosition = vec3(uModelMatrix * vec4(position.xyz, 1.0f));
+	  
       gl_Position = uViewMatrix * (uModelMatrix * position);;
    }
 #endif

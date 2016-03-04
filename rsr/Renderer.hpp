@@ -11,6 +11,7 @@
 #include "Geom.hpp"
 #include "StringView.hpp"
 #include "UBO.hpp"
+#include "CubeMap.hpp"
 
 
 class Renderer {
@@ -49,6 +50,7 @@ public:
       _setUBOData(ubo, 0, sizeof(T), &value);
    }
    void bindUBO(UBO *ubo, UBOSlot slot);
+   void bindCubeMap(CubeMap *cm, TextureSlot slot);
 
    void renderModel(Model *m);
 

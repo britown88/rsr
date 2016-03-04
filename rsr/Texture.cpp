@@ -28,23 +28,6 @@ size_t TextureRequest::hash() const {
    return h;
 }
 
-struct TextureBuffer {
-   std::unique_ptr<ColorRGBA[]> bits;
-   Int2 size;
-
-   TextureBuffer() {}
-
-   TextureBuffer(std::unique_ptr<ColorRGBA[]> bits, Int2 size)
-      :bits(std::move(bits)), size(size) {}
-
-   TextureBuffer(TextureBuffer && rhs)
-      :bits(std::move(rhs.bits)), size(rhs.size) {}
-   TextureBuffer &operator=(TextureBuffer && rhs) {
-      bits = std::move(rhs.bits);
-      size = rhs.size;
-      return *this;
-   }
-};
 
 TextureBuffer loadPng(std::string const& textureFile) {
    FILE* infile = fopen(textureFile.c_str(), "rb");
@@ -140,7 +123,7 @@ TextureBuffer loadPng(std::string const& textureFile) {
    }
 
    for (unsigned int i = 0; i < height; ++i) {
-      row_pointers[i] = (unsigned char*)(image_data)+(height - i - 1)*(rowbytes);
+      row_pointers[i] = (unsigned char*)(image_data)+(i)*(rowbytes);
    }
 
    png_read_image(png_ptr, row_pointers);
