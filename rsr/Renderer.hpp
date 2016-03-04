@@ -36,6 +36,8 @@ public:
    void viewport(Recti const &r);
 
    void enableDepth(bool enabled);
+   void enableAlphaBlending(bool enabled);
+   void enableWireframe(bool enabled);
 
    void setShader(Shader *s);
    void setFloat2(StringView u, Float2 const &value);

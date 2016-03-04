@@ -15,7 +15,7 @@ class Game::Impl {
    Window *m_window;
 
    Model *m_testModel, *m_msb, *m_testTrack;
-   Shader *m_testShader, *m_mshader;
+   Shader *m_testShader, *m_mshader, *m_wireframeShader;
    Texture *m_testTexture, *m_sbtex;
    UBO *m_testUBO;
    CubeMap *m_cubemap;
@@ -88,19 +88,21 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      m_testModel = ModelManager::importFromOBJ("assets/dragon.obj");
+      m_testModel = ModelManager::importFromOBJ("assets/bunny.obj");
 
       //m_testModel = buildTestModel();
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
-      TextureRequest request(internString("assets/granite.png"), Repeat);
-      m_testTexture = TextureManager::get(request);
+      //TextureRequest request(internString("assets/granite.png"), Repeat);
+      //m_testTexture = TextureManager::get(request);
+
+      m_wireframeShader = ShaderManager::create("assets/wireframe.glsl", 0);
 
       m_testUBO = UBOManager::create(sizeof(TestUBO));
       m_renderer.bindUBO(m_testUBO, 0);
 
       buildCamera();
 
-      float size = 9.0f;
+      float size = 700.0f;
 
       for (int i = 0; i < testBakers; ++i) {
          testBakerModels[i] =
@@ -123,7 +125,7 @@ public:
    void update() {
       static int j = 0;
 
-      if (j++ % 5 == 0) {
+      if (j++ % 1 == 0) {
          static int i = 0;
          int a = ((i++) % 360);
          float rad = a*DEG2RAD;
@@ -170,7 +172,6 @@ public:
       r.setTextureSlot(uSkyboxSlot, 0);
       r.renderModel(m_msb);
 
-
       r.enableDepth(true);
 
       Matrix lookAt = Matrix::lookAt(m_camera.eye, m_camera.center, m_camera.up);
@@ -184,21 +185,41 @@ public:
       r.setUBOData(m_testUBO, m_u);
 
       r.setShader(m_testShader);
+
+      r.enableAlphaBlending(true);
+
       for (int i = 0; i < testBakers; ++i) {
          r.setMatrix(uModel, testBakerModels[i]);
-         r.setMatrix(uTexture, texTransform);
+         //r.setMatrix(uTexture, texTransform);
          r.setColor(uColor, testBakerColors[i]);
 
-         r.bindTexture(m_testTexture, 0);
-         r.setTextureSlot(uTextureSlot, 0);
+         //r.bindTexture(m_testTexture, 0);
+         //r.setTextureSlot(uTextureSlot, 0);
 
          r.renderModel(m_testModel);
       }
 
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::White);
-
       r.renderModel(m_testTrack);
+
+
+
+      r.enableWireframe(true);
+      r.setShader(m_wireframeShader);
+      r.setColor(uColor, CommonColors::Red);
+
+      for (int i = 0; i < testBakers; ++i) {
+         r.setMatrix(uModel, testBakerModels[i]);         
+         r.renderModel(m_testModel);
+      }
+
+      r.setMatrix(uModel, Matrix::identity());
+      r.renderModel(m_testTrack);
+
+      r.enableWireframe(false);
+
+      r.enableAlphaBlending(false);
 
       
 

@@ -20,5 +20,12 @@ struct ColorRGBAf {
 
 namespace CommonColors {
    static const ColorRGBAf White = { 1.0f, 1.0f, 1.0f, 1.0f };
+   static const ColorRGBAf Black = { 0.0f, 0.0f, 0.0f, 1.0f };
+   static const ColorRGBAf Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+   static const ColorRGBAf Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+   static const ColorRGBAf Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+   static const ColorRGBAf Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
+   static const ColorRGBAf Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
+   static const ColorRGBAf Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 }
 

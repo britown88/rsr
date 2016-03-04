@@ -130,5 +130,8 @@
     <None Include="assets\skybox.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="assets\wireframe.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
