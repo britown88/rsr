@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 float linterp(float f1, float f2, float t);
 float cinterp(float f1, float f2, float f3, float f4, float t);
 
@@ -98,6 +100,21 @@ T width(Rect<T> const &r) { return r.bot.x - r.top.x; }
 
 template<typename T>
 T height(Rect<T> const &r) { return r.bot.y - r.top.y; }
+
+struct Plane {
+   Float3 pos, normal;
+
+   static bool above(Plane const &p, Float3 const &point) {
+      return vec::dot(vec::sub(p.pos, point), p.normal) > 0;
+   }
+};
+
+struct ConvexHull {
+   std::vector<Float3> vertices;
+   std::vector<Plane> planes;
+};
+
+ConvexHull quickHull(std::vector<Float3> &pointCloud);
 
 struct  Matrix {
    float data[16];
