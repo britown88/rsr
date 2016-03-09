@@ -33,8 +33,8 @@ layout(std140, binding = 0) uniform uboView{
       color *= texture(uTexture, vTexCoords);
       #endif
 
-	  vec3 I = normalize(vPosition - uCamera.eye);
-	  vec3 R = reflect(I, normalize(vNormal));
+	  //vec3 I = normalize(vPosition - uCamera.eye);
+	  //vec3 R = reflect(I, normalize(vNormal));
       //color.rgb *= texture(uSkybox, R).rgb;
 
 	  #ifdef DIFFUSE_LIGHTING

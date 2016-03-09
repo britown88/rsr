@@ -157,6 +157,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="OBJ.cpp" />
+    <ClCompile Include="QuickHull.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="StringView.cpp" />
@@ -192,6 +193,7 @@
   <ItemGroup>
     <None Include="assets\shaders.glsl" />
     <None Include="assets\skybox.glsl" />
+    <None Include="assets\wireframe.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

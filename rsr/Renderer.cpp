@@ -64,12 +64,37 @@ public:
 
          if (enabled) {
             glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LEQUAL);
             glAlphaFunc(GL_GREATER, 0.5);
             glEnable(GL_ALPHA_TEST);
          }
          else {
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_ALPHA_TEST);
+         }
+      });
+   }
+
+   void enableAlphaBlending(bool enabled) {
+      draw([=]() {
+
+         if (enabled) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         }
+         else {
+            glDisable(GL_BLEND);
+         }
+      });
+   }
+   void enableWireframe(bool enabled) {
+      draw([=]() {
+
+         if (enabled) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+         }
+         else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
          }
       });
    }
@@ -195,6 +220,8 @@ void Renderer::setMatrix(StringView u, Matrix const &value) { pImpl->setMatrix(u
 void Renderer::setColor(StringView u, ColorRGBAf const &value) { pImpl->setColor(u, value); }
 
 void Renderer::enableDepth(bool enabled) { pImpl->enableDepth(enabled); }
+void Renderer::enableAlphaBlending(bool enabled) { pImpl->enableAlphaBlending(enabled); }
+void Renderer::enableWireframe(bool enabled) { pImpl->enableWireframe(enabled); }
 
 void Renderer::setTextureSlot(StringView u, TextureSlot const &value){pImpl->setTextureSlot(u, value);}
 void Renderer::bindTexture(Texture *t, TextureSlot slot){pImpl->bindTexture(t, slot);}
