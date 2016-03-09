@@ -8,25 +8,16 @@
 
 #include <functional>
 
+using namespace Input;
+
 const char g_szClassName[] = "rsrWin";
 
-//LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-//{
-//   switch (msg)
-//   {
-//   case WM_CLOSE:
-//      DestroyWindow(hwnd);
-//      break;
-//   case WM_DESTROY:
-//      PostQuitMessage(0);
-//      break;
-//   default:
-//      return DefWindowProc(hwnd, msg, wParam, lParam);
-//   }
-//   return 0;
-//}
+static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static Window::Impl *Instance;
 
 class Window::Impl {
+public:   
+
    HWND m_hWnd = NULL;
    HDC m_hdc = NULL;
    HGLRC m_hContext = NULL;
@@ -38,27 +29,13 @@ class Window::Impl {
    Input::Mouse *m_mouse;
 
    Int2 getMousePosition() {
-      return Int2();
+      POINT p;
+      GetCursorPos(&p);
+      ScreenToClient(m_hWnd, &p);
+
+      return{ (int)p.x, (int)p.y };
    }
 
-   static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-   {
-      switch (msg)
-      {
-      case WM_CLOSE:
-         DestroyWindow(hwnd);
-         break;
-      case WM_DESTROY:
-         PostQuitMessage(0);
-         break;
-      default:
-         return DefWindowProc(hwnd, msg, wParam, lParam);
-      }
-      return 0;
-   }
-
-
-public:
    ~Impl() {
       wglMakeCurrent(NULL, NULL);
       wglDeleteContext(m_hContext);
@@ -68,7 +45,8 @@ public:
       Input::Keyboard::destroy(m_keyboard);
    }
 
-   int create(size_t width, size_t height, const char *title, int flags) {
+   int create(size_t width, size_t height, const char *title, int flags) {      
+
       m_hInstance = GetModuleHandle(NULL);
 
       WNDCLASSEX wc = { 0 };
@@ -118,6 +96,8 @@ public:
       m_keyboard = Input::Keyboard::create();
       m_mouse = Input::Mouse::create([=]() {return getMousePosition();});
       
+      Instance = (Window::Impl*)this;
+
       return 0;
    }
 
@@ -177,10 +157,232 @@ public:
 
    Input::Mouse *getMouse() { return m_mouse; }
    Input::Keyboard *getKeyboard() { return m_keyboard; }
+
+   void close() {
+      m_shouldClose = true;
+   }
+
+   void setCapture(bool capture) {
+      if (capture) {
+         SetCapture(m_hWnd);
+      }
+      else {
+         ReleaseCapture();
+      }
+   }
 };
 
+void inputChar(unsigned int c) {
+   KeyboardEvent e = {
+      KeyActions::Key_Char,
+      (Keys)0, c};
 
-Window::Window():pImpl(new Impl()) { }
+   Instance->getKeyboard()->pushEvent(e);
+}
+
+Keys getKeyFromWindows(WPARAM code) {
+   static const int keyCount = VK_OEM_CLEAR + 1;
+   static Keys map[keyCount];
+   static bool mapInit = false;
+
+   if (!mapInit) {
+      mapInit = true;
+
+      for (int i = 0; i < keyCount; ++i) {
+         map[i] = (Keys)Key_Undefined;
+      }
+
+      map[VK_SPACE] = Key_Space;
+      map[VK_OEM_7] = Key_Apostrophe;
+      map[VK_OEM_COMMA] = Key_Comma;
+      map[VK_OEM_MINUS] = Key_Minus;
+      map[VK_OEM_PERIOD] = Key_Period;
+      map[VK_OEM_2] = Key_Slash;
+      map['0'] = Key_0;
+      map['1'] = Key_1;
+      map['2'] = Key_2;
+      map['3'] = Key_3;
+      map['4'] = Key_4;
+      map['5'] = Key_5;
+      map['6'] = Key_6;
+      map['7'] = Key_7;
+      map['8'] = Key_8;
+      map['9'] = Key_9;
+      map[VK_OEM_1] = Key_Semicolon;
+      map[VK_OEM_PLUS] = Key_Equal;
+      map['A'] = Key_A;
+      map['B'] = Key_B;
+      map['C'] = Key_C;
+      map['D'] = Key_D;
+      map['E'] = Key_E;
+      map['F'] = Key_F;
+      map['G'] = Key_G;
+      map['H'] = Key_H;
+      map['I'] = Key_I;
+      map['J'] = Key_J;
+      map['K'] = Key_K;
+      map['L'] = Key_L;
+      map['M'] = Key_M;
+      map['N'] = Key_N;
+      map['O'] = Key_O;
+      map['P'] = Key_P;
+      map['Q'] = Key_Q;
+      map['R'] = Key_R;
+      map['S'] = Key_S;
+      map['T'] = Key_T;
+      map['U'] = Key_U;
+      map['V'] = Key_V;
+      map['W'] = Key_W;
+      map['X'] = Key_X;
+      map['Y'] = Key_Y;
+      map['Z'] = Key_Z;
+      map[VK_OEM_4] = Key_LeftBracket;
+      map[VK_OEM_5] = Key_Backslash;
+      map[VK_OEM_6] = Key_RightBracket;
+      map[VK_OEM_3] = Key_GraveAccent;
+      map[VK_ESCAPE] = Key_Escape;
+      map[VK_RETURN] = Key_Enter;
+      map[VK_TAB] = Key_Tab;
+      map[VK_BACK] = Key_Backspace;
+      map[VK_INSERT] = Key_Insert;
+      map[VK_DELETE] = Key_Delete;
+      map[VK_RIGHT] = Key_Right;
+      map[VK_LEFT] = Key_Left;
+      map[VK_DOWN] = Key_Down;
+      map[VK_UP] = Key_Up;
+      map[VK_PRIOR] = Key_PageUp;
+      map[VK_NEXT] = Key_PageDown;
+      map[VK_HOME] = Key_Home;
+      map[VK_END] = Key_End;
+      map[VK_CAPITAL] = Key_CapsLock;
+      map[VK_SCROLL] = Key_ScrollLock;
+      map[VK_NUMLOCK] = Key_NumLock;
+      map[VK_SNAPSHOT] = Key_PrintScreen;
+      map[VK_PAUSE] = Key_Pause;
+      map[VK_F1] = Key_F1;
+      map[VK_F2] = Key_F2;
+      map[VK_F3] = Key_F3;
+      map[VK_F4] = Key_F4;
+      map[VK_F5] = Key_F5;
+      map[VK_F6] = Key_F6;
+      map[VK_F7] = Key_F7;
+      map[VK_F8] = Key_F8;
+      map[VK_F9] = Key_F9;
+      map[VK_F10] = Key_F10;
+      map[VK_F11] = Key_F11;
+      map[VK_F12] = Key_F12;
+      map[VK_NUMPAD0] = Key_Keypad0;
+      map[VK_NUMPAD1] = Key_Keypad1;
+      map[VK_NUMPAD2] = Key_Keypad2;
+      map[VK_NUMPAD3] = Key_Keypad3;
+      map[VK_NUMPAD4] = Key_Keypad4;
+      map[VK_NUMPAD5] = Key_Keypad5;
+      map[VK_NUMPAD6] = Key_Keypad6;
+      map[VK_NUMPAD7] = Key_Keypad7;
+      map[VK_NUMPAD8] = Key_Keypad8;
+      map[VK_NUMPAD9] = Key_Keypad9;
+      map[VK_DECIMAL] = Key_KeypadDecimal;
+      map[VK_DIVIDE] = Key_KeypadDivide;
+      map[VK_NUMPAD9] = Key_KeypadMultiply;
+      map[VK_SUBTRACT] = Key_KeypadSubtract;
+      map[VK_ADD] = Key_KeypadAdd;
+      map[VK_RETURN] = Key_KeypadEnter;
+      map[VK_OEM_NEC_EQUAL] = Key_KeypadEqual;
+      map[VK_LSHIFT] = Key_LeftShift;
+      map[VK_LCONTROL] = Key_LeftControl;
+      map[VK_LMENU] = Key_LeftAlt;
+      map[VK_RSHIFT] = Key_RightShift;
+      map[VK_RCONTROL] = Key_RightControl;
+      map[VK_RMENU] = Key_RightAlt;
+   }
+
+   return map[code];
+}
+
+void inputKey(KeyActions action, WPARAM code) {
+   KeyboardEvent e = { action, getKeyFromWindows(code) };
+
+   if (e.key != (Keys)Key_Undefined) {
+      Instance->getKeyboard()->pushEvent(e);
+   }
+}
+
+void inputMouse(MouseActions action, MouseButtons button, short x, short y) {
+   MouseEvent me = { action, button, {(int)x, (int)y} };
+
+   if (action == MouseActions::Mouse_Pressed) {
+      Instance->setCapture(true);
+   }
+   else if (action == MouseActions::Mouse_Released) {
+      Instance->setCapture(false);
+   }
+
+   Instance->getMouse()->pushEvent(me);
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+   switch (msg)
+   {
+   case WM_CLOSE:
+      DestroyWindow(hwnd);
+      break;
+   case WM_DESTROY:
+      PostQuitMessage(0);
+      break;
+
+   case WM_CHAR:
+      inputChar((char)wParam);
+      break;
+   case WM_KEYDOWN:
+      inputKey(KeyActions::Key_Pressed, wParam);
+      break;
+   case WM_KEYUP:
+      inputKey(KeyActions::Key_Released, wParam);
+      break;
+
+   case WM_MOUSEMOVE:
+      inputMouse(MouseActions::Mouse_Moved, MouseButtons::MouseBtn_COUNT, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_MOUSEWHEEL:
+      inputMouse(MouseActions::Mouse_Scrolled, MouseButtons::MouseBtn_Middle, 0, HIWORD(wParam));
+      break;
+   case WM_LBUTTONUP:
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_LBUTTONDOWN:
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_LBUTTONDBLCLK:
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_RBUTTONUP:
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_RBUTTONDOWN:
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_RBUTTONDBLCLK:
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_MBUTTONUP:
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_MBUTTONDOWN:
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      break;
+   case WM_MBUTTONDBLCLK:
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      break;
+
+   default:
+      return DefWindowProc(hwnd, msg, wParam, lParam);
+   }
+   return 0;
+}
+
+
+Window::Window() :pImpl(new Impl()) { }
 Window::~Window() {}
 
 bool Window::shouldClose() { return pImpl->shouldClose(); }
@@ -212,3 +414,6 @@ void Window::destroy(Window *wnd) {
    }
 }
 
+void Window::close() {
+   pImpl->close();
+}

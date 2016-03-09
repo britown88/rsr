@@ -5,7 +5,9 @@
 #include "Input.hpp"
 
 class Window {
+public:
    class Impl;
+private:
    std::unique_ptr<Impl> pImpl;
 
    Window();
@@ -17,6 +19,8 @@ public:
 
    static Window *create(size_t width, size_t height, const char *title, int flags);
    static void destroy(Window *wnd);
+
+   void close();
 
    bool shouldClose();
    void pollEvents();

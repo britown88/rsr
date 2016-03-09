@@ -22,7 +22,8 @@ namespace Input {
       Mouse_Pressed = 0,
       Mouse_Released,
       Mouse_Moved,
-      Mouse_Scrolled
+      Mouse_Scrolled,
+      Mouse_DblClicked
    }MouseActions;
 
    typedef enum {

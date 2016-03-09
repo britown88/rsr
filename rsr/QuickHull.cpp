@@ -8,5 +8,5 @@ struct Face {
 };
 
 ConvexHull quickHull(std::vector<Float3> &pointCloud) {
-
+   return ConvexHull();
 }

@@ -72,11 +72,11 @@
     <ClCompile Include="Track.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-	<ClCompile Include="QuickHull.cpp">
-      <Filter>Source Files\utility</Filter>
-    </ClCompile>
-	<ClCompile Include="Input.cpp">
+    <ClCompile Include="Input.cpp">
       <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="QuickHull.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -136,10 +136,17 @@ public:
          m_camera.eye.y = m_camera.eye.z / 2.5f;
       }
 
+      Input::Keyboard *k = m_window->getKeyboard();
 
-      
+      while (auto ke = k->popEvent()) {
+         switch (ke->key) {
+         case Input::Keys::Key_Escape:
+            m_window->close();
+            break;
+         }
+      }
 
-
+      k->flushQueue();
    }
 
    void render() {
