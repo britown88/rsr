@@ -2,6 +2,10 @@
 
 #include <vector>
 
+static const float PI = 3.14159265359f;
+static const float RAD2DEG = 180.0f / PI;
+static const float DEG2RAD = PI / 180.0f;
+
 float linterp(float f1, float f2, float t);
 float cinterp(float f1, float f2, float f3, float f4, float t);
 
@@ -19,6 +23,27 @@ typedef Vec2<int> Int2;
 typedef Vec2<float> Float2;
 typedef Vec3<int> Int3;
 typedef Vec3<float> Float3;
+
+struct Spherical {
+   float r, //radial distance
+      dip, //zenith angle (phi) in degrees
+      azm; //azimuth angle (theta) in degrees
+
+   static Float3 toCartesian(Spherical const &s) {
+      float phi = s.dip * DEG2RAD;
+      float theta = s.azm * DEG2RAD;
+
+      float cosPhi = cosf(phi);
+
+      //y-z swap
+      return{
+         s.r * cosPhi * cos(theta),
+         s.r * sin(phi),
+         s.r * cosPhi * sin(theta)
+         
+      };
+   }
+};
 
 namespace vec
 {
@@ -89,6 +114,16 @@ namespace vec
    template<typename T>
    float len(Vec3<T> const &v) {
       return sqrtf(dot(v, v));
+   }
+
+   static Spherical toSpherical(Float3 const &v) {
+      Spherical out;
+
+      out.r = len(v);
+      out.dip = asinf(v.y / out.r) * RAD2DEG;
+      out.azm = atan2f(v.z, v.x) * RAD2DEG;
+
+      return out;
    }
 }
 

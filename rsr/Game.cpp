@@ -3,11 +3,26 @@
 #include "CubeMap.hpp"
 #include "Track.hpp"
 
+#include <algorithm>
+
 struct TestUBO {
    Matrix view;
    Float3 light;
    float ambient;
    Camera c;
+};
+
+struct CameraControl {
+   Camera cam;
+   Spherical coords;
+   Float3 followPoint;
+   float distance;
+
+   void update() {
+      cam.center = followPoint;
+      cam.eye = vec::add(vec::mul(Spherical::toCartesian(coords), distance), cam.center);
+      cam.dir = vec::normal(vec::sub(cam.center, cam.eye));
+   }
 };
 
 class Game::Impl {
@@ -24,7 +39,8 @@ class Game::Impl {
    Float3 m_bunnyPos, m_bunnyScale;
    Matrix m_bunnyModel;
 
-   Camera m_camera;
+   CameraControl m_camera;
+
 
    void buildSkybox() {
       m_msb = ModelManager::importFromOBJ("assets/myshittyskybox.obj");
@@ -70,15 +86,21 @@ class Game::Impl {
    void buildCamera() {
       float aspectRatio = (float)m_window->getWidth() / (float)m_window->getHeight();
 
-      m_camera.perspective = Matrix::perspective(
+      m_camera.cam.perspective = Matrix::perspective(
          60.0f, //fov                                       
          aspectRatio, //aspect ratio
          0.01f, // zNear
          FLT_MAX / 2); //zFar
 
-      m_camera.eye = { 0.0f, 100.0f, -100.0f };
-      m_camera.center = { 0.0f, 0.0f, 0.0f };
-      m_camera.up = { 0.0f, 1.0, 0.0f };
+      m_camera.cam.eye = { 0.0f };
+      m_camera.cam.center = { 0.0f };
+      m_camera.cam.up = { 0.0f, 1.0, 0.0f };
+
+      m_camera.coords = { 1.0f, 0.0f, 0.0f };
+      m_camera.followPoint = { 0.0f };
+      m_camera.distance = 100.0f;
+
+      m_camera.update();
    }
    
 
@@ -130,47 +152,17 @@ public:
    void updateMouse(Mouse *m) {
       while (auto me = m->popEvent()) {
          switch (me->action) {
+
+         case MouseActions::Mouse_Scrolled:
+            m_camera.distance = std::min(1000.0f, std::max(10.0f, m_camera.distance + -me->pos.y * 0.05f));
+            m_camera.update();
+            break;
          case MouseActions::Mouse_Moved:
             if (m->isDown(MouseButtons::MouseBtn_Right)) {
-               Int2 dPos = { -me->pos.x, me->pos.y};
-               Float3 dPosf;
-               
-               Float3 cameraDir = vec::normal(vec::sub(m_camera.eye, m_camera.center));
+               m_camera.coords.dip = std::min(89.99f, std::max(-89.99f, m_camera.coords.dip + me->pos.y));
+               m_camera.coords.azm += me->pos.x;
 
-               if (cameraDir.z < 0.0f) {
-                  if (cameraDir.x > -cameraDir.z) {
-                     dPosf = { 0.0f, (float)dPos.y, -(float)dPos.x };
-                  }
-                  else if (cameraDir.x < cameraDir.z) {
-                     dPosf = { 0.0f, (float)dPos.y, (float)dPos.x };
-                  }
-                  else {
-                     dPosf = { -(float)dPos.x, (float)dPos.y, 0.0f };
-                  }
-               }
-               else {
-                  if (cameraDir.x < -cameraDir.z) {
-                     dPosf = { 0.0f, (float)dPos.y, (float)dPos.x };
-                  }
-                  else if (cameraDir.x > cameraDir.z) {
-                     dPosf = { 0.0f, (float)dPos.y, -(float)dPos.x };
-                  }
-                  else {
-                     dPosf = { (float)dPos.x, (float)dPos.y, 0.0f };
-                  }
-               }
-               
-               
-
-               auto len = vec::len(dPosf);
-
-               if (fabs(len) < 0.0001f) {
-                  break;
-               }
-
-               Float3 axis = vec::cross(cameraDir, vec::normal(dPosf));
-
-               m_camera.eye = Quaternion::fromAxisAngle(axis, len*0.01f).rotate(m_camera.eye);
+               m_camera.update();
 
             }
             break;
@@ -219,10 +211,11 @@ public:
       r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
       r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
 
+      
+
       TestUBO cameraUbo;
-      cameraUbo.view = m_camera.perspective * Matrix::lookAt(Float3(), vec::sub(m_camera.center, m_camera.eye), m_camera.up);
-      m_camera.dir = vec::normal(vec::sub(m_camera.center, m_camera.eye));
-      cameraUbo.c = m_camera;
+      cameraUbo.c = m_camera.cam;
+      cameraUbo.view = cameraUbo.c.perspective * Matrix::lookAt(Float3(), vec::sub(cameraUbo.c.center, cameraUbo.c.eye), cameraUbo.c.up);
       r.setUBOData(m_testUBO, cameraUbo);
 
       r.enableDepth(false);
@@ -234,13 +227,11 @@ public:
 
       r.enableDepth(true);
 
-      Matrix lookAt = Matrix::lookAt(m_camera.eye, m_camera.center, m_camera.up);
-      m_u.view = m_camera.perspective * lookAt;
+      m_u.c = m_camera.cam;
+      Matrix lookAt = Matrix::lookAt(m_u.c.eye, m_u.c.center, m_u.c.up);
+      m_u.view = m_u.c.perspective * lookAt;
       m_u.light = { 0.0f, -1.0f, 0.0f };
       m_u.ambient = 0.1f;
-
-      m_camera.dir = vec::normal(vec::sub(m_camera.center, m_camera.eye));
-      m_u.c = m_camera;
 
       r.setUBOData(m_testUBO, m_u);
 
