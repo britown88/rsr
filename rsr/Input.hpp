@@ -169,7 +169,6 @@ public:
 
    void pushEvent(MouseEvent const &e);
    Int2 position();
-   Int2 lastPosition();
 
    MouseEvent *popEvent();
    bool isDown(MouseButtons button);

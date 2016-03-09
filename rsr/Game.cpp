@@ -128,17 +128,39 @@ public:
          switch (me->action) {
          case MouseActions::Mouse_Moved:
             if (m->isDown(MouseButtons::MouseBtn_Right)) {
-               Int2 lastPos = m->lastPosition();
-               Int2 dPos = { me->pos.x - lastPos.x, me->pos.y - lastPos.y };
+               Int2 dPos = { -me->pos.x, me->pos.y};
                Float3 dPosf = {(float)dPos.x, (float)dPos.y, 0.0f };
 
-               if (dPos.x == 0 && dPos.y == 0) {
+               auto len = vec::len(dPosf);
+
+               if (fabs(len) < 0.0001f) {
                   break;
                }
 
-               Float3 axis = vec::normal<float>({ dPosf.y, dPosf.x, 0.0f});
 
-               m_camera.eye = Quaternion::fromAxisAngle(axis, 0.01f).rotate(m_camera.eye);
+
+               Float3 axis;
+               if (m_camera.eye.z < 0.0f) {
+                  if (m_camera.eye.z < m_camera.eye.x) {
+                     axis = vec::normal<float>({ dPosf.y, dPosf.x, 0.0f });
+                  }
+                  else {
+                     axis = vec::normal<float>({ 0.0f, dPosf.x, dPosf.y });
+                  }
+               }
+               else {
+                  if (m_camera.eye.z > m_camera.eye.x) {
+                     axis = vec::normal<float>({ -dPosf.y, dPosf.x, 0.0f });
+                  }
+                  else {
+                     axis = vec::normal<float>({ 0.0f, dPosf.x, -dPosf.y });
+                  }
+               }
+               
+               
+               
+
+               m_camera.eye = Quaternion::fromAxisAngle(axis, len*0.01f).rotate(m_camera.eye);
 
             }
             break;

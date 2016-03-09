@@ -3,6 +3,7 @@
 #include "Window.hpp"
 
 #include <windows.h>
+#include <windowsx.h>
 #include <GL/GL.h>
 #include <GL/GLU.h>
 
@@ -322,6 +323,8 @@ void inputMouse(MouseActions action, MouseButtons button, short x, short y) {
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+
+   static Int2 lastMousePos = { 0 };
    switch (msg)
    {
    case WM_CLOSE:
@@ -342,37 +345,40 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
       break;
 
    case WM_MOUSEMOVE:
-      inputMouse(MouseActions::Mouse_Moved, MouseButtons::MouseBtn_COUNT, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Moved, MouseButtons::MouseBtn_COUNT, 
+         GET_X_LPARAM(lParam) - lastMousePos.x, 
+         GET_Y_LPARAM(lParam) - lastMousePos.y);
+      lastMousePos = { GET_X_LPARAM(lParam) , GET_Y_LPARAM(lParam) };
       break;
    case WM_MOUSEWHEEL:
       inputMouse(MouseActions::Mouse_Scrolled, MouseButtons::MouseBtn_Middle, 0, HIWORD(wParam));
       break;
    case WM_LBUTTONUP:
-      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Left, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_LBUTTONDOWN:
-      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Left, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_LBUTTONDBLCLK:
-      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Left, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Left, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_RBUTTONUP:
-      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Right, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_RBUTTONDOWN:
-      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Right, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_RBUTTONDBLCLK:
-      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Right, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Right, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_MBUTTONUP:
-      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Released, MouseButtons::MouseBtn_Middle, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_MBUTTONDOWN:
-      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_Pressed, MouseButtons::MouseBtn_Middle, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
    case WM_MBUTTONDBLCLK:
-      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Middle, LOWORD(lParam), HIWORD(lParam));
+      inputMouse(MouseActions::Mouse_DblClicked, MouseButtons::MouseBtn_Middle, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       break;
 
    default:
