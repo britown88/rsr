@@ -3,13 +3,14 @@
 #include <vector>
 #include <functional>
 
-using namespace Input;
+
 
 class Mouse::Impl {
    std::vector<MouseEvent> m_eventQueue;   
    PositionGet m_getPos;
    bool m_heldMap[MouseBtn_COUNT];
    int m_queuePos;
+   Int2 m_lastPosition;
 public:
    Impl(PositionGet const &posGet):m_getPos(posGet) {}
    ~Impl(){}
@@ -21,6 +22,13 @@ public:
       if (m_queuePos == m_eventQueue.size()) {
          return nullptr;
       }
+
+      if (m_queuePos > 0) {
+         m_lastPosition = m_eventQueue[m_queuePos - 1].pos;
+      }
+      //else {
+      //   m_lastPosition = m_eventQueue[m_queuePos].pos;
+      //}
 
       auto out = &m_eventQueue[m_queuePos++];
 
@@ -43,6 +51,10 @@ public:
       m_queuePos = 0;
       m_eventQueue.clear();
    }
+
+   Int2 lastPosition() {
+      return m_lastPosition;
+   }
 };
 
 Mouse::Mouse(PositionGet const &posGet) :pImpl(new Impl(posGet)) {}
@@ -56,6 +68,8 @@ Int2 Mouse::position() { return pImpl->position(); }
 MouseEvent *Mouse::popEvent() { return pImpl->popEvent(); }
 bool Mouse::isDown(MouseButtons button) { return pImpl->isDown(button); }
 void Mouse::flushQueue() { pImpl->flushQueue(); }
+
+Int2 Mouse::lastPosition() { return pImpl->lastPosition(); }
 
 
 class Keyboard::Impl {

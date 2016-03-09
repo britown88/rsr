@@ -8,7 +8,7 @@
 
 #include <functional>
 
-using namespace Input;
+
 
 const char g_szClassName[] = "rsrWin";
 
@@ -25,8 +25,8 @@ public:
    size_t m_width = 0, m_height = 0;
    bool m_shouldClose = false;
 
-   Input::Keyboard *m_keyboard;
-   Input::Mouse *m_mouse;
+   Keyboard *m_keyboard;
+   Mouse *m_mouse;
 
    Int2 getMousePosition() {
       POINT p;
@@ -41,8 +41,8 @@ public:
       wglDeleteContext(m_hContext);
       ReleaseDC(m_hWnd, m_hdc);
 
-      Input::Mouse::destroy(m_mouse);
-      Input::Keyboard::destroy(m_keyboard);
+      Mouse::destroy(m_mouse);
+      Keyboard::destroy(m_keyboard);
    }
 
    int create(size_t width, size_t height, const char *title, int flags) {      
@@ -93,8 +93,8 @@ public:
       m_width = width;
       m_height = height;
 
-      m_keyboard = Input::Keyboard::create();
-      m_mouse = Input::Mouse::create([=]() {return getMousePosition();});
+      m_keyboard = Keyboard::create();
+      m_mouse = Mouse::create([=]() {return getMousePosition();});
       
       Instance = (Window::Impl*)this;
 
@@ -155,8 +155,8 @@ public:
       SwapBuffers(m_hdc);
    }
 
-   Input::Mouse *getMouse() { return m_mouse; }
-   Input::Keyboard *getKeyboard() { return m_keyboard; }
+   Mouse *getMouse() { return m_mouse; }
+   Keyboard *getKeyboard() { return m_keyboard; }
 
    void close() {
       m_shouldClose = true;
@@ -394,8 +394,8 @@ size_t  Window::getHeight() { return pImpl->getHeight(); }
 int  Window::beginRender() { return pImpl->beginRender(); }
 void  Window::swapBuffers() { pImpl->swapBuffers(); }
 
-Input::Mouse *Window::getMouse() { return pImpl->getMouse(); }
-Input::Keyboard *Window::getKeyboard() { return pImpl->getKeyboard(); }
+Mouse *Window::getMouse() { return pImpl->getMouse(); }
+Keyboard *Window::getKeyboard() { return pImpl->getKeyboard(); }
 
 Window *Window::create(size_t width, size_t height, const char *title, int flags) {
    auto out = new Window();

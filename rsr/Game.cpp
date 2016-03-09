@@ -21,6 +21,9 @@ class Game::Impl {
    CubeMap *m_cubemap;
    TestUBO m_u;
 
+   Float3 m_bunnyPos, m_bunnyScale;
+   Matrix m_bunnyModel;
+
    Camera m_camera;
 
    void buildSkybox() {
@@ -73,15 +76,10 @@ class Game::Impl {
          0.01f, // zNear
          FLT_MAX / 2); //zFar
 
-      m_camera.eye = { 0.0f, 0.0f, 0.0f };
+      m_camera.eye = { 0.0f, 100.0f, -100.0f };
       m_camera.center = { 0.0f, 0.0f, 0.0f };
       m_camera.up = { 0.0f, 1.0, 0.0f };
    }
-
-   static const int testBakers = 1;
-
-   Matrix testBakerModels[testBakers];
-   ColorRGBAf testBakerColors[testBakers];
    
 
 public:
@@ -89,6 +87,8 @@ public:
 
    void onStartup() {
       m_testModel = ModelManager::importFromOBJ("assets/bunny.obj");
+
+      m_bunnyScale = { 200.0f, 200.0f, 200.0f };
 
       //m_testModel = buildTestModel();
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
@@ -102,17 +102,6 @@ public:
 
       buildCamera();
 
-      float size = 700.0f;
-
-      for (int i = 0; i < testBakers; ++i) {
-         testBakerModels[i] =
-            //Matrix::translate3f({ (float)((rand() % 300) - 150), (float)((rand() % 300) - 150), (float)((rand() % 300) - 150) }) *
-            //Matrix::translate3f({0.0f, -80.0f, 0.0f}) * 
-            Matrix::scale3f({ size, size, size });
-
-         testBakerColors[i] = { (rand()%100) / 100.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f };
-      }
-
       buildSkybox();
 
       m_testTrack = buildTestTrack();
@@ -122,31 +111,63 @@ public:
 
    }
 
-   void update() {
-      static int j = 0;
-
-      if (j++ % 1 == 0) {
-         static int i = 0;
-         int a = ((i++) % 360);
-         float rad = a*DEG2RAD;
-         float r = 250.0f;
-
-         m_camera.eye.x = r * cos(rad);
-         m_camera.eye.z = r * sin(rad);
-         m_camera.eye.y = m_camera.eye.z / 2.5f;
-      }
-
-      Input::Keyboard *k = m_window->getKeyboard();
-
+   void updateKeyboard(Keyboard *k) {
       while (auto ke = k->popEvent()) {
          switch (ke->key) {
-         case Input::Keys::Key_Escape:
+         case Keys::Key_Escape:
             m_window->close();
             break;
          }
       }
 
       k->flushQueue();
+   }
+
+   void updateMouse(Mouse *m) {
+      while (auto me = m->popEvent()) {
+         switch (me->action) {
+         case MouseActions::Mouse_Moved:
+            if (m->isDown(MouseButtons::MouseBtn_Right)) {
+               Int2 lastPos = m->lastPosition();
+               Int2 dPos = { me->pos.x - lastPos.x, me->pos.y - lastPos.y };
+               Float3 dPosf = {(float)dPos.x, (float)dPos.y, 0.0f };
+
+               if (dPos.x == 0 && dPos.y == 0) {
+                  break;
+               }
+
+               Float3 axis = vec::normal<float>({ dPosf.y, dPosf.x, 0.0f});
+
+               m_camera.eye = Quaternion::fromAxisAngle(axis, 0.01f).rotate(m_camera.eye);
+
+            }
+            break;
+         }
+      }
+      m->flushQueue();
+   }
+
+   void update() {
+      static int j = 0;
+
+      //if (j++ % 1 == 0) {
+      //   static int i = 0;
+      //   int a = ((i++) % 360);
+      //   float rad = a*DEG2RAD;
+      //   float r = 250.0f;
+
+      //   m_camera.eye.x = r * cos(rad);
+      //   m_camera.eye.z = r * sin(rad);
+      //   m_camera.eye.y = m_camera.eye.z / 2.5f;
+      //}
+
+      updateKeyboard(m_window->getKeyboard());
+      updateMouse(m_window->getMouse());
+
+      
+
+      m_bunnyModel = Matrix::translate3f(m_bunnyPos) *
+                     Matrix::scale3f(m_bunnyScale);
    }
 
    void render() {
@@ -195,16 +216,12 @@ public:
 
       r.enableAlphaBlending(true);
 
-      for (int i = 0; i < testBakers; ++i) {
-         r.setMatrix(uModel, testBakerModels[i]);
-         //r.setMatrix(uTexture, texTransform);
-         r.setColor(uColor, testBakerColors[i]);
 
-         //r.bindTexture(m_testTexture, 0);
-         //r.setTextureSlot(uTextureSlot, 0);
+      r.setMatrix(uModel, m_bunnyModel);
+      r.setColor(uColor, CommonColors::White);
 
-         r.renderModel(m_testModel);
-      }
+      r.renderModel(m_testModel);
+
 
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::White);
@@ -216,10 +233,8 @@ public:
       r.setShader(m_wireframeShader);
       r.setColor(uColor, CommonColors::Red);
 
-      for (int i = 0; i < testBakers; ++i) {
-         r.setMatrix(uModel, testBakerModels[i]);         
-         r.renderModel(m_testModel);
-      }
+      r.setMatrix(uModel, m_bunnyModel);
+      r.renderModel(m_testModel); 
 
       r.setMatrix(uModel, Matrix::identity());
       r.renderModel(m_testTrack);

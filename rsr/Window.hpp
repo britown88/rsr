@@ -33,6 +33,6 @@ public:
 
    void swapBuffers();
 
-   Input::Mouse *getMouse();
-   Input::Keyboard *getKeyboard();
+   Mouse *getMouse();
+   Keyboard *getKeyboard();
 };

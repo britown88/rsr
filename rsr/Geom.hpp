@@ -85,6 +85,11 @@ namespace vec
    Vec3<T> normal(Vec3<T> const &v) {
       return mul(v, 1.0f / sqrtf(dot(v, v)));
    }
+
+   template<typename T>
+   float len(Vec3<T> const &v) {
+      return sqrtf(dot(v, v));
+   }
 }
 
 template<typename T>
