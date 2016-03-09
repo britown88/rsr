@@ -118,9 +118,13 @@ public:
             m_window->close();
             break;
          }
+
+
       }
 
       k->flushQueue();
+
+
    }
 
    void updateMouse(Mouse *m) {
@@ -129,7 +133,34 @@ public:
          case MouseActions::Mouse_Moved:
             if (m->isDown(MouseButtons::MouseBtn_Right)) {
                Int2 dPos = { -me->pos.x, me->pos.y};
-               Float3 dPosf = {(float)dPos.x, (float)dPos.y, 0.0f };
+               Float3 dPosf;
+               
+               Float3 cameraDir = vec::normal(vec::sub(m_camera.eye, m_camera.center));
+
+               if (cameraDir.z < 0.0f) {
+                  if (cameraDir.x > -cameraDir.z) {
+                     dPosf = { 0.0f, (float)dPos.y, -(float)dPos.x };
+                  }
+                  else if (cameraDir.x < cameraDir.z) {
+                     dPosf = { 0.0f, (float)dPos.y, (float)dPos.x };
+                  }
+                  else {
+                     dPosf = { -(float)dPos.x, (float)dPos.y, 0.0f };
+                  }
+               }
+               else {
+                  if (cameraDir.x < -cameraDir.z) {
+                     dPosf = { 0.0f, (float)dPos.y, (float)dPos.x };
+                  }
+                  else if (cameraDir.x > cameraDir.z) {
+                     dPosf = { 0.0f, (float)dPos.y, -(float)dPos.x };
+                  }
+                  else {
+                     dPosf = { (float)dPos.x, (float)dPos.y, 0.0f };
+                  }
+               }
+               
+               
 
                auto len = vec::len(dPosf);
 
@@ -137,28 +168,7 @@ public:
                   break;
                }
 
-
-
-               Float3 axis;
-               if (m_camera.eye.z < 0.0f) {
-                  if (m_camera.eye.z < m_camera.eye.x) {
-                     axis = vec::normal<float>({ dPosf.y, dPosf.x, 0.0f });
-                  }
-                  else {
-                     axis = vec::normal<float>({ 0.0f, dPosf.x, dPosf.y });
-                  }
-               }
-               else {
-                  if (m_camera.eye.z > m_camera.eye.x) {
-                     axis = vec::normal<float>({ -dPosf.y, dPosf.x, 0.0f });
-                  }
-                  else {
-                     axis = vec::normal<float>({ 0.0f, dPosf.x, -dPosf.y });
-                  }
-               }
-               
-               
-               
+               Float3 axis = vec::cross(cameraDir, vec::normal(dPosf));
 
                m_camera.eye = Quaternion::fromAxisAngle(axis, len*0.01f).rotate(m_camera.eye);
 
