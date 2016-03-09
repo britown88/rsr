@@ -153,6 +153,7 @@
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Geom.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="OBJ.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="DrawQueue.hpp" />
     <ClInclude Include="Game.hpp" />
     <ClInclude Include="Geom.hpp" />
+    <ClInclude Include="Input.hpp" />
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="Shader.hpp" />

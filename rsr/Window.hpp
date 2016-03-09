@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "Input.hpp"
+
 class Window {
    class Impl;
    std::unique_ptr<Impl> pImpl;
@@ -26,4 +28,7 @@ public:
    int beginRender();
 
    void swapBuffers();
+
+   Input::Mouse *getMouse();
+   Input::Keyboard *getKeyboard();
 };

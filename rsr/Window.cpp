@@ -6,23 +6,25 @@
 #include <GL/GL.h>
 #include <GL/GLU.h>
 
+#include <functional>
+
 const char g_szClassName[] = "rsrWin";
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-   switch (msg)
-   {
-   case WM_CLOSE:
-      DestroyWindow(hwnd);
-      break;
-   case WM_DESTROY:
-      PostQuitMessage(0);
-      break;
-   default:
-      return DefWindowProc(hwnd, msg, wParam, lParam);
-   }
-   return 0;
-}
+//LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+//{
+//   switch (msg)
+//   {
+//   case WM_CLOSE:
+//      DestroyWindow(hwnd);
+//      break;
+//   case WM_DESTROY:
+//      PostQuitMessage(0);
+//      break;
+//   default:
+//      return DefWindowProc(hwnd, msg, wParam, lParam);
+//   }
+//   return 0;
+//}
 
 class Window::Impl {
    HWND m_hWnd = NULL;
@@ -31,11 +33,39 @@ class Window::Impl {
    HINSTANCE m_hInstance = NULL;
    size_t m_width = 0, m_height = 0;
    bool m_shouldClose = false;
+
+   Input::Keyboard *m_keyboard;
+   Input::Mouse *m_mouse;
+
+   Int2 getMousePosition() {
+      return Int2();
+   }
+
+   static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+   {
+      switch (msg)
+      {
+      case WM_CLOSE:
+         DestroyWindow(hwnd);
+         break;
+      case WM_DESTROY:
+         PostQuitMessage(0);
+         break;
+      default:
+         return DefWindowProc(hwnd, msg, wParam, lParam);
+      }
+      return 0;
+   }
+
+
 public:
    ~Impl() {
       wglMakeCurrent(NULL, NULL);
       wglDeleteContext(m_hContext);
       ReleaseDC(m_hWnd, m_hdc);
+
+      Input::Mouse::destroy(m_mouse);
+      Input::Keyboard::destroy(m_keyboard);
    }
 
    int create(size_t width, size_t height, const char *title, int flags) {
@@ -84,6 +114,9 @@ public:
 
       m_width = width;
       m_height = height;
+
+      m_keyboard = Input::Keyboard::create();
+      m_mouse = Input::Mouse::create([=]() {return getMousePosition();});
       
       return 0;
    }
@@ -141,6 +174,9 @@ public:
    void swapBuffers() {
       SwapBuffers(m_hdc);
    }
+
+   Input::Mouse *getMouse() { return m_mouse; }
+   Input::Keyboard *getKeyboard() { return m_keyboard; }
 };
 
 
@@ -155,6 +191,9 @@ size_t  Window::getHeight() { return pImpl->getHeight(); }
 
 int  Window::beginRender() { return pImpl->beginRender(); }
 void  Window::swapBuffers() { pImpl->swapBuffers(); }
+
+Input::Mouse *Window::getMouse() { return pImpl->getMouse(); }
+Input::Keyboard *Window::getKeyboard() { return pImpl->getKeyboard(); }
 
 Window *Window::create(size_t width, size_t height, const char *title, int flags) {
    auto out = new Window();
