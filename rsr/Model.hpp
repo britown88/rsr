@@ -116,11 +116,11 @@ public:
 #pragma endregion
 
 class ModelManager {
-   static Model *_create(void *data, size_t size, size_t vCount, int *indices, int iCount, VertexAttribute *attrs, int attrCount);
+   static Model *_create(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount);
 public:
    template<typename FVF>
-   static Model *create(FVF *data, size_t vCount, int *indices, size_t iCount) {
-      return _create(data, sizeof(FVF), vCount, indices, iCount, FVF::attrs().data(), FVF::attrs().size());
+   static Model *create(FVF *data, size_t vCount) {
+      return _create(data, sizeof(FVF), vCount, FVF::attrs().data(), FVF::attrs().size());
    }
 
    enum RenderType {

@@ -306,7 +306,6 @@ ModelVertices &ModelVertices::expandIndices() {
 template<typename FVF>
 Model *createModelEX(ModelVertices const &vertices) {
    std::vector<FVF> outVertices;
-   std::vector<int> outIndices;
    size_t piCount = vertices.positionIndices.size();
 
    std::vector<VertexAttribute> &attrs = FVF::attrs();
@@ -343,10 +342,9 @@ Model *createModelEX(ModelVertices const &vertices) {
       if (hasNormal) { *(Float3*)(((unsigned char *)&vertex) + attrOffsets[normalPos]) = vertices.normals[i]; }
 
       outVertices.push_back(vertex);
-      outIndices.push_back((int)i);
    }
 
-   return ModelManager::create(outVertices.data(), outVertices.size(), outIndices.data(), outIndices.size());
+   return ModelManager::create(outVertices.data(), outVertices.size());
 }
 
 Model *ModelVertices::createModel(int modelOptions) {

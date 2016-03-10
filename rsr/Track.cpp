@@ -106,41 +106,20 @@ Model *createTrackSegment(std::vector<TrackPoint> &pointList, bool wrap) {
    }
 
    //generate vbo and ibo
-   std::vector<Float3> vertices;
-   std::vector<int> indices;
 
-   vertices.insert(vertices.end(), { leftList[0], rightList[0] });
+   ModelVertices vertices;
+
+   vertices.positions.insert(vertices.positions.end(), { leftList[0], rightList[0] });
    for (int i = 1; i < leftList.size(); ++i) {
-      vertices.insert(vertices.end(), { leftList[i], rightList[i] });
+      vertices.positions.insert(vertices.positions.end(), { leftList[i], rightList[i] });
 
       int v2 = i * 2;  //top right
       int v1 = v2 - 2; //top left  
       int v3 = v2 - 1; //bottom left
       int v4 = v2 + 1; //bottom right
 
-      indices.insert(indices.end(), {v1, v2, v3, v2, v4, v3});
+      vertices.positionIndices.insert(vertices.positionIndices.end(), {v1, v2, v3, v2, v4, v3});
    }
 
-   //calculate normals and push to vbo
-   std::vector<FVF_Pos3_Norm3_Col4> outV;
-   std::vector<Float3> normals(vertices.size());
-   std::vector<int> normalCounts(vertices.size());
-
-   calculateNormals(vertices, indices, normals, normalCounts);
-
-   for (int i = 0; i < vertices.size(); ++i) {
-      Float3 normal;
-
-      if (normalCounts[i] > 0) {
-         normal = vec::mul(normals[i], 1.0f / normalCounts[i]);
-      }
-
-      outV.push_back({ vertices[i], normal, CommonColors::White });
-   }
-
-   return ModelManager::create(
-      outV.data(),
-      outV.size(),
-      indices.data(), 
-      indices.size());
+   return vertices.calculateNormals().expandIndices().createModel(ModelOpts::IncludeNormals | ModelOpts::IncludeColor);
 }

@@ -57,11 +57,7 @@ class Game::Impl {
 
       std::vector<int> indices = { 0, 1, 2, 3, 4, 5 };
 
-      m_testLines = ModelManager::create(
-         vertices.data(),
-         vertices.size(),
-         indices.data(),
-         indices.size());
+      m_testLines = ModelManager::create(vertices.data(), vertices.size());
    }
 
 
@@ -94,22 +90,7 @@ class Game::Impl {
       return createTrackSegment(pointList, true);
    }
 
-   Model *buildTestModel() {
-      std::vector<FVF_Pos3_Tex2_Col4> vertices = {
-         { { -0.5f, -0.5f, 0.0f },{ 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-         { { 0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-         { { 0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-         { { -0.5f, 0.5f, 0.0f },{ 0.0f, 1.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
-      };
 
-      std::vector<int> indices = { 0, 1, 3, 1, 2, 3 };
-
-      return ModelManager::create(
-         vertices.data(),
-         vertices.size(),
-         indices.data(),
-         indices.size());
-   }
    void buildCamera() {
       float aspectRatio = (float)m_window->getWidth() / (float)m_window->getHeight();
 
@@ -142,9 +123,9 @@ public:
          m_testModel = vertexSet[0].calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
       }
 
-      m_bunnyScale = { 200.0f, 200.0f, 200.0f };
+      m_bunnyScale = vec::mul({ 1,1, 1 }, 1.0f);
 
-      //m_testModel = buildTestModel();
+
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
       m_lineShader = ShaderManager::create("assets/shaders.glsl", 0);
       //TextureRequest request(internString("assets/granite.png"), Repeat);
@@ -188,7 +169,7 @@ public:
          switch (me->action) {
 
          case MouseActions::Mouse_Scrolled:
-            m_camera.distance = std::min(1000.0f, std::max(10.0f, m_camera.distance + -me->pos.y * 0.05f));
+            m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance + -me->pos.y * 0.05f));
             m_axisScale = m_camera.distance / 20.0f;
             m_camera.update();
             break;
