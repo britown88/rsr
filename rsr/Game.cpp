@@ -62,10 +62,10 @@ class Game::Impl {
    void buildSkybox() {
       auto vertexSet = ModelVertices::fromOBJ("assets/myshittyskybox.obj");
       if (!vertexSet.empty()) {
-         m_msb = vertexSet[0].expandIndices().createModel(ModelOpts::IncludeColor);
+         m_msb = vertexSet[0].expandIndices().createModel();
       }
 
-      m_mshader = ShaderManager::create("assets/skybox.glsl", 0);
+      m_mshader = ShaderManager::create("assets/skybox.glsl");
       m_cubemap = CubeMapManager::create({
          "assets/skybox3/right.png", 
          "assets/skybox3/left.png" , 
@@ -126,18 +126,18 @@ public:
             p = q.rotate(p);
          }
 
-         m_testModel = vs.calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
+         m_testModel = vs.calculateNormals().expandIndices().createModel(ModelOpts::IncludeNormals);
       }
 
       m_bunnyScale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
 
 
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
-      m_lineShader = ShaderManager::create("assets/shaders.glsl", 0);
+      m_lineShader = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       //TextureRequest request(internString("assets/granite.png"), Repeat);
       //m_testTexture = TextureManager::get(request);
 
-      m_wireframeShader = ShaderManager::create("assets/wireframe.glsl", 0);
+      m_wireframeShader = ShaderManager::create("assets/wireframe.glsl");
 
       m_testUBO = UBOManager::create(sizeof(TestUBO));
       m_renderer.bindUBO(m_testUBO, 0);

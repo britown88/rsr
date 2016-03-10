@@ -15,13 +15,13 @@ layout(std140, binding = 0) uniform uboView{
 #ifdef FRAGMENT
 
    out vec4 outColor;
-   smooth in vec4 vColor;
-   smooth in vec3 vNormal;
-   smooth in vec3 vPosition;
+   in vec4 vColor;
+   in vec3 vNormal;
+   in vec3 vPosition;
 
    #ifdef DIFFUSE_TEXTURE
    uniform sampler2D uTexture;
-   smooth in vec2 vTexCoords;
+   in vec2 vTexCoords;
    #endif
 
    uniform samplerCube uSkybox;
@@ -68,8 +68,11 @@ layout(std140, binding = 0) uniform uboView{
 
    in vec2 aPosition2;
    in vec3 aPosition3;
-   in vec4 aColor;
    in vec3 aNormal;
+
+   #ifdef COLOR_ATTRIBUTE
+   in vec4 aColor;
+   #endif
 
    out vec3 vPosition;
    out vec4 vColor;
@@ -78,12 +81,16 @@ layout(std140, binding = 0) uniform uboView{
    #ifdef DIFFUSE_TEXTURE
    uniform mat4 uTexMatrix;
    in vec2 aTexCoords; 
-   smooth out vec2 vTexCoords;
+   out vec2 vTexCoords;
    #endif
 
    void main() {
-	  
-      vColor = aColor * uColorTransform;
+
+	  #ifdef COLOR_ATTRIBUTE
+	  vColor = aColor * uColorTransform;
+	  #else
+	  vColor = uColorTransform;
+	  #endif
 
 	  #ifdef DIFFUSE_LIGHTING
 	 // vNormal = mat3(transpose(inverse(uModelMatrix))) * aNormal; 

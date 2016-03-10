@@ -108,6 +108,7 @@ class Shader {
       std::string DiffuseTextureOption = "#define DIFFUSE_TEXTURE\n";
       std::string Position2DOption = "#define POSITION_2D\n";
       std::string DiffuseLightingOption = "#define DIFFUSE_LIGHTING\n";
+      std::string ColorAttributeOption = "#define COLOR_ATTRIBUTE\n";
 
       std::vector<const char*> vertShader, fragShader;
 
@@ -121,6 +122,9 @@ class Shader {
       }
       if (m_params&DiffuseLighting) {
          vertShader.push_back(DiffuseLightingOption.c_str());
+      }
+      if (m_params&ColorAttribute) {
+         vertShader.push_back(ColorAttributeOption.c_str());
       }
       vertShader.push_back(file);
       auto vert = compile(vertShader, GL_VERTEX_SHADER);

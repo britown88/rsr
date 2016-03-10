@@ -28,7 +28,7 @@ struct ModelVertices {
 
    ModelVertices &calculateNormals();
    ModelVertices &expandIndices();
-   Model *createModel(int modelOptions);
+   Model *createModel(int modelOptions = 0);
 };
 
 enum class VertexAttribute : unsigned int {

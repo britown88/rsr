@@ -121,5 +121,5 @@ Model *createTrackSegment(std::vector<TrackPoint> &pointList, bool wrap) {
       vertices.positionIndices.insert(vertices.positionIndices.end(), {v1, v2, v3, v2, v4, v3});
    }
 
-   return vertices.calculateNormals().expandIndices().createModel(ModelOpts::IncludeNormals | ModelOpts::IncludeColor);
+   return vertices.calculateNormals().expandIndices().createModel(ModelOpts::IncludeNormals);
 }
