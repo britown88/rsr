@@ -167,8 +167,8 @@ float const &Matrix::operator[](size_t index) const {
    return data[index];
 }
 
-Quaternion Quaternion::fromAxisAngle(Float3 axis, float angle) {
-   float halfAngle = angle / 2;
+Quaternion Quaternion::fromAxisAngle(Float3 axis, float angleInDegrees) {
+   float halfAngle = (angleInDegrees*DEG2RAD) / 2.0f;
    float sinHalfAngle = (float)sin(halfAngle);
 
    return { 

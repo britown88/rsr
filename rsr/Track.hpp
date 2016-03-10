@@ -7,7 +7,8 @@
 
 struct TrackPoint {
    Float3 pos;
-   float roll, width;
+   float roll, //inDegrees
+      width;
 };
 
 

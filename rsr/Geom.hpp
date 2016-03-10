@@ -183,7 +183,7 @@ struct Quaternion {
    Float3 xyz;
    float w;
 
-   static Quaternion fromAxisAngle(Float3 axis, float angle);
+   static Quaternion fromAxisAngle(Float3 axis, float angleInDegrees);
    static Quaternion unit();
    Matrix toMatrix();
    Float3 rotate(Float3 &pt);

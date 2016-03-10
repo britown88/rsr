@@ -5,6 +5,36 @@
 
 #include <algorithm>
 
+struct BunnyModel {
+   Shader *shader;
+   ModelVertices vertices;
+   Model *renderModel;
+};
+
+struct Bunny {
+   Float3 pos, scale;
+   ColorRGBAf color;
+
+   Matrix modelMatrix;
+
+   struct Control {
+      bool left = false;
+      bool right = false;
+      bool forward = false;
+      bool back = false;
+   };
+
+   Control control;
+
+   void updateMatrix() {
+      modelMatrix = Matrix::translate3f(pos) * Matrix::scale3f(scale);
+   }
+
+   void update() {
+      updateMatrix();
+   }
+};
+
 struct TestUBO {
    Matrix view;
    Float3 light;
@@ -31,17 +61,42 @@ class Game::Impl {
 
    float m_axisScale = 1.0f;
 
-   Model *m_testModel, *m_msb, *m_testTrack, *m_testLines;
-   Shader *m_testShader, *m_mshader, *m_wireframeShader, *m_lineShader;
-   Texture *m_testTexture, *m_sbtex;
+   Model *m_skybox, *m_testTrack, *m_axisLines;
+   Shader *m_skyboxShader, *m_wireframeShader, *m_lineShader;
    UBO *m_testUBO;
    CubeMap *m_cubemap;
    TestUBO m_u;
 
-   Float3 m_bunnyPos, m_bunnyScale;
-   Matrix m_bunnyModel;
-
    CameraControl m_camera;
+
+   BunnyModel m_bunnyModel;
+   Bunny m_bunny;
+
+   void buildBunnyModel() {
+      m_bunnyModel.shader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
+
+      auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
+      if (!vertexSet.empty()) {
+         auto &vs = vertexSet[0];
+         auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, -90.0f);
+         for (auto &p : vs.positions) {
+            p.y -= 0.075f;
+            p.z -= 0.01f;
+            p = q.rotate(p);
+         }
+
+         m_bunnyModel.vertices = vs.calculateNormals();
+         m_bunnyModel.renderModel = vs.expandIndices().createModel(ModelOpts::IncludeNormals);
+      }
+   }
+
+   void buildBunny() {      
+      m_bunny.pos = { 0.0f, 0.0f, 0.0f };
+      m_bunny.scale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
+      m_bunny.color = CommonColors::Yellow;
+
+      m_bunny.update();
+   }
 
    void buildTestLines() {
       std::vector<FVF_Pos3_Col4> vertices = {
@@ -55,17 +110,16 @@ class Game::Impl {
          { { 0.0f, 0.0f,  1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
       };
 
-      m_testLines = ModelManager::create(vertices.data(), vertices.size());
+      m_axisLines = ModelManager::create(vertices.data(), vertices.size());
    }
-
 
    void buildSkybox() {
       auto vertexSet = ModelVertices::fromOBJ("assets/myshittyskybox.obj");
       if (!vertexSet.empty()) {
-         m_msb = vertexSet[0].expandIndices().createModel();
+         m_skybox = vertexSet[0].expandIndices().createModel();
       }
 
-      m_mshader = ShaderManager::create("assets/skybox.glsl");
+      m_skyboxShader = ShaderManager::create("assets/skybox.glsl");
       m_cubemap = CubeMapManager::create({
          "assets/skybox3/right.png", 
          "assets/skybox3/left.png" , 
@@ -76,19 +130,18 @@ class Game::Impl {
 
    }
 
-   Model *buildTestTrack() {
+   void buildTestTrack() {
       std::vector<TrackPoint> pointList = {
          { { -50.0f, -100.0f, -50.0f },   0.0f, 10.0f },
-         { {  50.0f, -100.0f,   -50.0f }, 0.25f, 10.0f },
-         { {  50.0f, -100.0f,  50.0f },   0.9f, 10.0f },
-         { { -50.0f, -100.0f,    50.0f }, 0.25f, 10.0f },
+         { {  50.0f, -100.0f,   -50.0f }, 20.0f, 10.0f },
+         { {  50.0f, -100.0f,  50.0f },   45.0f, 10.0f },
+         { { -50.0f, -100.0f,    50.0f }, 20.0f, 10.0f },
          { { -50.0f, -100.0f, -50.0f },   0.0f, 10.0f }
       };
 
-      return createTrackSegment(pointList, true);
+      m_testTrack = createTrackSegment(pointList, true);
    }
-
-
+   
    void buildCamera() {
       float aspectRatio = (float)m_window->getWidth() / (float)m_window->getHeight();
 
@@ -116,26 +169,9 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
-      if (!vertexSet.empty()) {
-         auto &vs = vertexSet[0];
-         auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, -90.0f * DEG2RAD);
-         for (auto &p : vs.positions) {
-            p.y -= 0.075f;
-            p.z -= 0.01f;
-            p = q.rotate(p);
-         }
-
-         m_testModel = vs.calculateNormals().expandIndices().createModel(ModelOpts::IncludeNormals);
-      }
-
-      m_bunnyScale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
-
-
-      m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
+      
+   
       m_lineShader = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
-      //TextureRequest request(internString("assets/granite.png"), Repeat);
-      //m_testTexture = TextureManager::get(request);
 
       m_wireframeShader = ShaderManager::create("assets/wireframe.glsl");
 
@@ -143,11 +179,12 @@ public:
       m_renderer.bindUBO(m_testUBO, 0);
 
       buildCamera();
-
       buildSkybox();
-
-      m_testTrack = buildTestTrack();
+      buildTestTrack();
       buildTestLines();
+
+      buildBunnyModel();
+      buildBunny();
    }
 
    void onShutdown() {
@@ -161,13 +198,9 @@ public:
             m_window->close();
             break;
          }
-
-
       }
 
       k->flushQueue();
-
-
    }
 
    void updateMouse(Mouse *m) {
@@ -209,11 +242,6 @@ public:
 
       updateKeyboard(m_window->getKeyboard());
       updateMouse(m_window->getMouse());
-
-      
-
-      m_bunnyModel = Matrix::translate3f(m_bunnyPos) *
-                     Matrix::scale3f(m_bunnyScale);
    }
 
    void render() {
@@ -242,10 +270,10 @@ public:
 
       r.enableDepth(false);
 
-      r.setShader(m_mshader);
+      r.setShader(m_skyboxShader);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
-      r.renderModel(m_msb);
+      r.renderModel(m_skybox);
 
       r.enableDepth(true);
 
@@ -261,28 +289,26 @@ public:
       r.setShader(m_lineShader);
       r.setMatrix(uModel, Matrix::scale3f(vec::mul({ 1.0f, 1.0f, 1.0f }, m_axisScale)));
       r.setColor(uColor, CommonColors::White);
-      r.renderModel(m_testLines, ModelManager::Lines);
+      r.renderModel(m_axisLines, ModelManager::Lines);
 
 
 
-      r.setShader(m_testShader);
-      r.setMatrix(uModel, m_bunnyModel);
-      r.setColor(uColor, CommonColors::White);
-      r.renderModel(m_testModel);
+      r.setShader(m_bunnyModel.shader);
+      r.setMatrix(uModel, m_bunny.modelMatrix);
+      r.setColor(uColor, m_bunny.color);
+      r.renderModel(m_bunnyModel.renderModel);
 
 
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_testTrack);
 
-
-
       r.enableWireframe(true);
       r.setShader(m_wireframeShader);
-      r.setColor(uColor, CommonColors::Red);
+      r.setColor(uColor, CommonColors::Cyan);
 
-      r.setMatrix(uModel, m_bunnyModel);
-      //r.renderModel(m_testModel); 
+      //r.setMatrix(uModel, m_bunny.modelMatrix);
+      //r.renderModel(m_bunny.model);
 
       r.setMatrix(uModel, Matrix::identity());
       //r.renderModel(m_testTrack);
