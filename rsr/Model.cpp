@@ -5,6 +5,24 @@
 
 #include <memory>
 
+int vertexAttributeByteSize(VertexAttribute attr) {
+   switch (attr) {
+   case VertexAttribute::Tex2:
+   case VertexAttribute::Pos2:
+      return sizeof(Float2);
+      break;
+   case VertexAttribute::Pos3:
+   case VertexAttribute::Norm3:
+      return sizeof(Float3);
+      break;
+   case VertexAttribute::Col4:
+      return sizeof(ColorRGBAf);
+      break;
+   }
+
+   return 0;
+}
+
 
 class Model {
    std::unique_ptr<byte[]> m_data;
@@ -70,20 +88,19 @@ public:
          int count = 0;
          int offset = totalOffset;
 
+         totalOffset += vertexAttributeByteSize(attr);
+
          switch (attr) {
          case VertexAttribute::Tex2:
          case VertexAttribute::Pos2:
             count = 2;
-            totalOffset += sizeof(Float2);
             break;
          case VertexAttribute::Pos3:
          case VertexAttribute::Norm3:
             count = 3;
-            totalOffset += sizeof(Float3);
             break;
          case VertexAttribute::Col4:
             count = 4;
-            totalOffset += sizeof(ColorRGBAf);
             break;
          }
 

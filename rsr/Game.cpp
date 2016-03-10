@@ -43,7 +43,12 @@ class Game::Impl {
 
 
    void buildSkybox() {
-      m_msb = ModelManager::importFromOBJ("assets/myshittyskybox.obj");
+      auto vertexSet = ModelManager::readOBJ("assets/myshittyskybox.obj");
+      if (!vertexSet.empty()) {
+         ModelManager::expandIndices(vertexSet[0]);
+         m_msb = ModelManager::createModel(vertexSet[0], ModelOpts::IncludeColor);
+      }
+
       m_mshader = ShaderManager::create("assets/skybox.glsl", 0);
       m_cubemap = CubeMapManager::create({
          "assets/skybox3/right.png", 
@@ -108,7 +113,12 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
-      m_testModel = ModelManager::importFromOBJ("assets/bunny.obj");
+      auto vertexSet = ModelManager::readOBJ("assets/bunny.obj");
+      if (!vertexSet.empty()) {
+         ModelManager::calculateNormals(vertexSet[0]);
+         ModelManager::expandIndices(vertexSet[0]);
+         m_testModel = ModelManager::createModel(vertexSet[0], (ModelOpts)((int)ModelOpts::IncludeColor|(int)ModelOpts::IncludeNormals));
+      }
 
       m_bunnyScale = { 200.0f, 200.0f, 200.0f };
 

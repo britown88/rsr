@@ -8,6 +8,17 @@
 
 class Model;
 
+struct ModelVertices {
+   std::vector<Float3> positions;
+   std::vector<Float2> textures;
+   std::vector<Float3> normals;
+   std::vector<ColorRGBAf> colors;
+
+   std::vector<int> positionIndices;
+   std::vector<int> textureIndices;
+   std::vector<int> normalIndices;
+};
+
 enum class VertexAttribute : unsigned int {
    Pos2 = 0,
    Pos3,
@@ -15,6 +26,14 @@ enum class VertexAttribute : unsigned int {
    Col4,
    Norm3,
    COUNT
+};
+
+int vertexAttributeByteSize(VertexAttribute attr);
+
+enum class ModelOpts : unsigned int {
+   IncludeColor =   1 << 0,
+   IncludeTexture = 1 << 1,
+   IncludeNormals = 1 << 2
 };
 
 #define FVF_ATTRS(...) \
@@ -38,6 +57,12 @@ public:
    Float2 pos2; ColorRGBAf col4;
 };
 
+class FVF_Pos3 {
+public:
+   FVF_ATTRS(VertexAttribute::Pos3)
+   Float3 pos3;
+};
+
 class FVF_Pos3_Col4 {
 public:
    FVF_ATTRS( VertexAttribute::Pos3, VertexAttribute::Col4 )
@@ -50,10 +75,22 @@ public:
    Float3 pos3; Float2 tex2; ColorRGBAf col4;
 };
 
+class FVF_Pos3_Tex2 {
+public:
+   FVF_ATTRS(VertexAttribute::Pos3, VertexAttribute::Tex2)
+   Float3 pos3; Float2 tex2;
+};
+
 class FVF_Pos3_Norm3_Tex2_Col4 {
 public:
    FVF_ATTRS(VertexAttribute::Pos3, VertexAttribute::Norm3, VertexAttribute::Tex2, VertexAttribute::Col4)
    Float3 pos3, norm3; Float2 tex2; ColorRGBAf col4;
+};
+
+class FVF_Pos3_Norm3_Tex2 {
+public:
+   FVF_ATTRS(VertexAttribute::Pos3, VertexAttribute::Norm3, VertexAttribute::Tex2)
+   Float3 pos3, norm3; Float2 tex2;
 };
 
 class FVF_Pos3_Norm3_Col4 {
@@ -62,6 +99,11 @@ public:
    Float3 pos3, norm3; ColorRGBAf col4;
 };
 
+class FVF_Pos3_Norm3 {
+public:
+   FVF_ATTRS(VertexAttribute::Pos3, VertexAttribute::Norm3)
+   Float3 pos3, norm3;
+};
 
 
 class ModelManager {
@@ -76,7 +118,9 @@ public:
    static void bind(Model *self);
    static void draw(Model *self);
 
-   static Model *importFromOBJ(const char *file);
-
+   static std::vector<ModelVertices> readOBJ(const char *file);
+   static void calculateNormals(ModelVertices &vertices);
+   static void expandIndices(ModelVertices &vertices);
+   static Model *createModel(ModelVertices const &vertices, ModelOpts o);
 };
 
