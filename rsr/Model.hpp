@@ -24,11 +24,10 @@ struct ModelVertices {
    std::vector<int> textureIndices;
    std::vector<int> normalIndices;
 
-   static std::vector<ModelVertices> readOBJ(const char *file);
+   static std::vector<ModelVertices> fromOBJ(const char *file);
 
    ModelVertices &calculateNormals();
    ModelVertices &expandIndices();
-
    Model *createModel(int modelOptions);
 };
 
@@ -43,7 +42,7 @@ enum class VertexAttribute : unsigned int {
 
 int vertexAttributeByteSize(VertexAttribute attr);
 
-
+#pragma region Vertex objects
 
 #define FVF_ATTRS(...) \
    static std::vector<VertexAttribute> &attrs() { \
@@ -114,6 +113,7 @@ public:
    Float3 pos3, norm3;
 };
 
+#pragma endregion
 
 class ModelManager {
    static Model *_create(void *data, size_t size, size_t vCount, int *indices, int iCount, VertexAttribute *attrs, int attrCount);
@@ -123,8 +123,14 @@ public:
       return _create(data, sizeof(FVF), vCount, indices, iCount, FVF::attrs().data(), FVF::attrs().size());
    }
 
+   enum RenderType {
+      Triangles,
+      Lines,
+      COUNT
+   };
+
    static void destroy(Model *self);
    static void bind(Model *self);
-   static void draw(Model *self);
+   static void draw(Model *self, RenderType type = Triangles);
 };
 

@@ -190,7 +190,7 @@ static LineResult processLine(TokenList &tokens, OBJData &data) {
    return LineResult::Unused;
 }
 
-std::vector<ModelVertices> ModelVertices::readOBJ(const char *file) {
+std::vector<ModelVertices> ModelVertices::fromOBJ(const char *file) {
    OBJData data;
    std::vector<ModelVertices> out;
 

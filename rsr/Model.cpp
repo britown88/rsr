@@ -109,11 +109,16 @@ public:
       }
    }
 
-   void render() {
-      
+   void render(ModelManager::RenderType type) {
+      static GLuint map[ModelManager::RenderType::COUNT];
+      static bool mapInit = false;
+      if (!mapInit) {
+         mapInit = true;
+         map[ModelManager::Triangles] = GL_TRIANGLES;
+         map[ModelManager::Lines] = GL_LINES;
+      }
 
-      glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, 0);
-
+      glDrawElements(map[type], m_indexCount, GL_UNSIGNED_INT, 0);
    }
 };
 
@@ -126,4 +131,4 @@ void ModelManager::destroy(Model *self) {
 }
 
 void ModelManager::bind(Model *self) { self->bind(); }
-void ModelManager::draw(Model *self) { self->render(); }
+void ModelManager::draw(Model *self, RenderType type) { self->render(type); }

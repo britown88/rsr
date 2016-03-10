@@ -186,16 +186,14 @@ public:
       });
    }
 
-   void renderModel(Model *m) {
+   void renderModel(Model *m, ModelManager::RenderType type) {
       draw([=]() {
          if (m != m_activeModel) {
             ModelManager::bind(m);
             m_activeModel = m;
          }
 
-
-
-         ModelManager::draw(m);
+         ModelManager::draw(m, type);
       });
    }
 
@@ -230,4 +228,4 @@ void Renderer::_setUBOData(UBO *ubo, size_t offset, size_t size, void *data) { p
 void Renderer::bindUBO(UBO *ubo, UBOSlot slot) { pImpl->bindUBO(ubo, slot); }
 void Renderer::bindCubeMap(CubeMap *cm, TextureSlot slot) { pImpl->bindCubeMap(cm, slot); }
 
-void Renderer::renderModel(Model *m) { pImpl->renderModel(m); }
+void Renderer::renderModel(Model *m, ModelManager::RenderType type) { pImpl->renderModel(m, type); }

@@ -54,6 +54,6 @@ public:
    void bindUBO(UBO *ubo, UBOSlot slot);
    void bindCubeMap(CubeMap *cm, TextureSlot slot);
 
-   void renderModel(Model *m);
+   void renderModel(Model *m, ModelManager::RenderType type = ModelManager::Triangles);
 
 };
