@@ -45,17 +45,15 @@ class Game::Impl {
 
    void buildTestLines() {
       std::vector<FVF_Pos3_Col4> vertices = {
-         { { -1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+         { { -0.5f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
          { {  1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
 
-         { { 0.0f, -1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+         { { 0.0f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
          { { 0.0f,  1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
 
-         { { 0.0f, 0.0f, -1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
+         { { 0.0f, 0.0f, -0.5f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
          { { 0.0f, 0.0f,  1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
       };
-
-      std::vector<int> indices = { 0, 1, 2, 3, 4, 5 };
 
       m_testLines = ModelManager::create(vertices.data(), vertices.size());
    }
@@ -104,11 +102,11 @@ class Game::Impl {
       m_camera.cam.center = { 0.0f };
       m_camera.cam.up = { 0.0f, 1.0, 0.0f };
 
-      m_camera.coords = { 1.0f, 0.0f, 0.0f };
+      m_camera.coords = { 1.0f, 0.0f, 90.0f };
       m_camera.followPoint = { 0.0f };
       m_camera.distance = 100.0f;
 
-      m_axisScale = m_camera.distance / 20.0f;
+      m_axisScale = m_camera.distance / 10.0f;
 
       m_camera.update();
    }
@@ -120,10 +118,18 @@ public:
    void onStartup() {
       auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
       if (!vertexSet.empty()) {
-         m_testModel = vertexSet[0].calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
+         auto &vs = vertexSet[0];
+         auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, -90.0f * DEG2RAD);
+         for (auto &p : vs.positions) {
+            p.y -= 0.075f;
+            p.z -= 0.01f;
+            p = q.rotate(p);
+         }
+
+         m_testModel = vs.calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
       }
 
-      m_bunnyScale = vec::mul({ 1,1, 1 }, 1.0f);
+      m_bunnyScale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
 
 
       m_testShader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);      
@@ -169,8 +175,9 @@ public:
          switch (me->action) {
 
          case MouseActions::Mouse_Scrolled:
-            m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance + -me->pos.y * 0.05f));
-            m_axisScale = m_camera.distance / 20.0f;
+            m_camera.distance += -me->pos.y * 0.05f;
+            m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance));
+            m_axisScale = m_camera.distance / 10.0f;
             m_camera.update();
             break;
          case MouseActions::Mouse_Moved:
@@ -252,7 +259,7 @@ public:
       r.enableAlphaBlending(true);
 
       r.setShader(m_lineShader);
-      r.setMatrix(uModel, Matrix::scale3f(vec::mul({ 1, 1, 1 }, m_axisScale)));
+      r.setMatrix(uModel, Matrix::scale3f(vec::mul({ 1.0f, 1.0f, 1.0f }, m_axisScale)));
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_testLines, ModelManager::Lines);
 
