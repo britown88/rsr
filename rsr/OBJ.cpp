@@ -278,24 +278,25 @@ ModelVertices &ModelVertices::expandIndices() {
    bool hasColors = !colors.empty();
    size_t piCount = positionIndices.size();
 
+   //expanding vetices normalizes all 3 lists to lineup to the same size
+   //no longer need for indices
+
+
    for (size_t i = 0; i < piCount; ++i) {
       int pIndex = positionIndices[i];
       out.positions.push_back(positions[pIndex]);
       if (hasColors) {
          out.colors.push_back(colors[pIndex]);
       }
-      out.positionIndices.push_back((int)i);
 
       if (hasTextures) {
          int tIndex = textureIndices[i];
          out.textures.push_back(textures[tIndex]);
-         out.textureIndices.push_back((int)i);
       }
 
       if (hasNormals) {
          int nIndex = normalIndices[i];
          out.normals.push_back(normals[nIndex]);
-         out.normalIndices.push_back((int)i);
       }
    }
 
@@ -306,7 +307,7 @@ ModelVertices &ModelVertices::expandIndices() {
 template<typename FVF>
 Model *createModelEX(ModelVertices const &vertices) {
    std::vector<FVF> outVertices;
-   size_t piCount = vertices.positionIndices.size();
+   size_t pCount = vertices.positions.size();
 
    std::vector<VertexAttribute> &attrs = FVF::attrs();
    auto colorIter = std::find(attrs.begin(), attrs.end(), VertexAttribute::Col4);
@@ -331,7 +332,7 @@ Model *createModelEX(ModelVertices const &vertices) {
       
    }
 
-   for (size_t i = 0; i < piCount; ++i) {
+   for (size_t i = 0; i < pCount; ++i) {
       FVF vertex;
       vertex.pos3 = vertices.positions[i];
 
