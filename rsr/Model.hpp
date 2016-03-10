@@ -8,6 +8,12 @@
 
 class Model;
 
+enum ModelOpts : unsigned int {
+   IncludeColor = 1 << 0,
+   IncludeTexture = 1 << 1,
+   IncludeNormals = 1 << 2
+};
+
 struct ModelVertices {
    std::vector<Float3> positions;
    std::vector<Float2> textures;
@@ -17,6 +23,13 @@ struct ModelVertices {
    std::vector<int> positionIndices;
    std::vector<int> textureIndices;
    std::vector<int> normalIndices;
+
+   static std::vector<ModelVertices> readOBJ(const char *file);
+
+   ModelVertices &calculateNormals();
+   ModelVertices &expandIndices();
+
+   Model *createModel(int modelOptions);
 };
 
 enum class VertexAttribute : unsigned int {
@@ -30,11 +43,7 @@ enum class VertexAttribute : unsigned int {
 
 int vertexAttributeByteSize(VertexAttribute attr);
 
-enum class ModelOpts : unsigned int {
-   IncludeColor =   1 << 0,
-   IncludeTexture = 1 << 1,
-   IncludeNormals = 1 << 2
-};
+
 
 #define FVF_ATTRS(...) \
    static std::vector<VertexAttribute> &attrs() { \
@@ -117,10 +126,5 @@ public:
    static void destroy(Model *self);
    static void bind(Model *self);
    static void draw(Model *self);
-
-   static std::vector<ModelVertices> readOBJ(const char *file);
-   static void calculateNormals(ModelVertices &vertices);
-   static void expandIndices(ModelVertices &vertices);
-   static Model *createModel(ModelVertices const &vertices, ModelOpts o);
 };
 

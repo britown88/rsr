@@ -190,7 +190,7 @@ static LineResult processLine(TokenList &tokens, OBJData &data) {
    return LineResult::Unused;
 }
 
-std::vector<ModelVertices> ModelManager::readOBJ(const char *file) {
+std::vector<ModelVertices> ModelVertices::readOBJ(const char *file) {
    OBJData data;
    std::vector<ModelVertices> out;
 
@@ -228,76 +228,79 @@ std::vector<ModelVertices> ModelManager::readOBJ(const char *file) {
    return out;
 }
 
-void ModelManager::calculateNormals(ModelVertices &vertices) {
-   size_t pCount = vertices.positions.size();
-   size_t piCount = vertices.positionIndices.size();
+ModelVertices &ModelVertices::calculateNormals() {
+   size_t pCount = positions.size();
+   size_t piCount = positionIndices.size();
 
-   std::vector<Float3> normals(pCount);
+   std::vector<Float3> normalList(pCount);
    std::vector<int> normalCounts(pCount);
 
    for (int i = 0; i < piCount / 3; ++i) {
-      int i1 = vertices.positionIndices[i * 3 + 0];
-      int i2 = vertices.positionIndices[i * 3 + 1];
-      int i3 = vertices.positionIndices[i * 3 + 2];
+      int i1 = positionIndices[i * 3 + 0];
+      int i2 = positionIndices[i * 3 + 1];
+      int i3 = positionIndices[i * 3 + 2];
 
-      Float3 v1 = vertices.positions[i1];
-      Float3 v2 = vertices.positions[i2];
-      Float3 v3 = vertices.positions[i3];
+      Float3 v1 = positions[i1];
+      Float3 v2 = positions[i2];
+      Float3 v3 = positions[i3];
 
       Float3 normal = vec::normal(vec::cross(vec::sub(v2, v1), vec::sub(v3, v1)));
 
-      normals[i1] = vec::add(normals[i1], normal);
-      normals[i2] = vec::add(normals[i2], normal);
-      normals[i3] = vec::add(normals[i3], normal);
+      normalList[i1] = vec::add(normalList[i1], normal);
+      normalList[i2] = vec::add(normalList[i2], normal);
+      normalList[i3] = vec::add(normalList[i3], normal);
 
       ++normalCounts[i1];
       ++normalCounts[i2];
       ++normalCounts[i3];
    }
 
-   vertices.normals.clear();
-   vertices.normalIndices = vertices.positionIndices;//copy
+   normals.clear();
+   normalIndices = positionIndices;//copy
 
    for (int i = 0; i < pCount; ++i) {
       Float3 normal;
 
       if (normalCounts[i] > 0) {
-         normal = vec::mul(normals[i], 1.0f / normalCounts[i]);
+         normal = vec::mul(normalList[i], 1.0f / normalCounts[i]);
       }
 
-      vertices.normals.push_back(normal);
+      normals.push_back(normal);
    }
+
+   return *this;
 }
 
-void ModelManager::expandIndices(ModelVertices &vertices) {
+ModelVertices &ModelVertices::expandIndices() {
    ModelVertices out;
-   bool hasTextures = !vertices.textureIndices.empty();
-   bool hasNormals = !vertices.normalIndices.empty();
-   bool hasColors = !vertices.colors.empty();
-   size_t piCount = vertices.positionIndices.size();
+   bool hasTextures = !textureIndices.empty();
+   bool hasNormals = !normalIndices.empty();
+   bool hasColors = !colors.empty();
+   size_t piCount = positionIndices.size();
 
    for (size_t i = 0; i < piCount; ++i) {
-      int pIndex = vertices.positionIndices[i];
-      out.positions.push_back(vertices.positions[pIndex]);
+      int pIndex = positionIndices[i];
+      out.positions.push_back(positions[pIndex]);
       if (hasColors) {
-         out.colors.push_back(vertices.colors[pIndex]);
+         out.colors.push_back(colors[pIndex]);
       }
       out.positionIndices.push_back((int)i);
 
       if (hasTextures) {
-         int tIndex = vertices.textureIndices[i];
-         out.textures.push_back(vertices.textures[tIndex]);
+         int tIndex = textureIndices[i];
+         out.textures.push_back(textures[tIndex]);
          out.textureIndices.push_back((int)i);
       }
 
       if (hasNormals) {
-         int nIndex = vertices.normalIndices[i];
-         out.normals.push_back(vertices.normals[nIndex]);
+         int nIndex = normalIndices[i];
+         out.normals.push_back(normals[nIndex]);
          out.normalIndices.push_back((int)i);
       }
    }
 
-   vertices = std::move(out);
+   *this = std::move(out);
+   return *this;
 }
 
 template<typename FVF>
@@ -346,17 +349,17 @@ Model *createModelEX(ModelVertices const &vertices) {
    return ModelManager::create(outVertices.data(), outVertices.size(), outIndices.data(), outIndices.size());
 }
 
-Model *ModelManager::createModel(ModelVertices const &vertices, ModelOpts o) {
-   bool c = (int)o&(int)ModelOpts::IncludeColor;
-   bool t = (int)o&(int)ModelOpts::IncludeTexture;
-   bool n = (int)o&(int)ModelOpts::IncludeNormals;
+Model *ModelVertices::createModel(int modelOptions) {
+   bool c = modelOptions&ModelOpts::IncludeColor;
+   bool t = modelOptions&ModelOpts::IncludeTexture;
+   bool n = modelOptions&ModelOpts::IncludeNormals;
 
-   if (c && t && n) { return createModelEX<FVF_Pos3_Norm3_Tex2_Col4>(vertices); }
-   else if (c && n) { return createModelEX<FVF_Pos3_Norm3_Col4>(vertices); }
-   else if(c && t ) { return createModelEX<FVF_Pos3_Tex2_Col4>(vertices); }
-   else if(t && n) { return createModelEX<FVF_Pos3_Norm3_Tex2>(vertices); }
-   else if(c) { return createModelEX<FVF_Pos3_Col4>(vertices); }
-   else if(t) { return createModelEX<FVF_Pos3_Tex2>(vertices); }
-   else if(n) { return createModelEX<FVF_Pos3_Norm3>(vertices); }
-   else { return createModelEX<FVF_Pos3>(vertices); }
+   if (c && t && n) { return createModelEX<FVF_Pos3_Norm3_Tex2_Col4>(*this); }
+   else if (c && n) { return createModelEX<FVF_Pos3_Norm3_Col4>(*this); }
+   else if(c && t ) { return createModelEX<FVF_Pos3_Tex2_Col4>(*this); }
+   else if(t && n) { return createModelEX<FVF_Pos3_Norm3_Tex2>(*this); }
+   else if(c) { return createModelEX<FVF_Pos3_Col4>(*this); }
+   else if(t) { return createModelEX<FVF_Pos3_Tex2>(*this); }
+   else if(n) { return createModelEX<FVF_Pos3_Norm3>(*this); }
+   else { return createModelEX<FVF_Pos3>(*this); }
 }
