@@ -124,6 +124,7 @@ class Game::Impl {
       m_bunny.update();
    }
 
+
    void buildTestLines() {
       std::vector<FVF_Pos3_Col4> vertices = {
          { { -0.5f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
@@ -136,7 +137,7 @@ class Game::Impl {
          { { 0.0f, 0.0f,  1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
       };
 
-      m_axisLines = ModelManager::create(vertices.data(), vertices.size());
+      m_axisLines = ModelManager::create(vertices);
    }
 
    void buildSkybox() {

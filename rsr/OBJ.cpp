@@ -373,7 +373,7 @@ Model *createModelEX(ModelVertices const &vertices) {
       outVertices.push_back(vertex);
    }
 
-   return ModelManager::create(outVertices.data(), outVertices.size());
+   return ModelManager::create(outVertices);
 }
 
 Model *ModelVertices::createModel(int modelOptions) {

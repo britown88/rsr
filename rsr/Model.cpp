@@ -26,32 +26,48 @@ int vertexAttributeByteSize(VertexAttribute attr) {
 
 class Model {
    std::unique_ptr<byte[]> m_data;
+   std::unique_ptr<byte[]> m_dataNewData;
    size_t m_vertexSize;
    size_t m_vertexCount;
+   ModelManager::DataStreamType m_dataType;
 
-   bool m_built;
+   bool m_built, m_dirtyData;
 
    std::vector<VertexAttribute> m_attrs;
 
    GLuint m_vboHandle;
 
+   static GLuint getGLDataType(ModelManager::DataStreamType type) {
+      static GLuint map[3];
+      static bool mapInit = false;
+      if (!mapInit) {
+         mapInit = true;
+         map[ModelManager::Static] = GL_STATIC_DRAW;
+         map[ModelManager::Dynamic] = GL_DYNAMIC_DRAW;
+         map[ModelManager::Stream] = GL_STREAM_DRAW;
+      }
+
+      return map[type];
+   }
+
    void build() {
       glGenBuffers(1, (GLuint*)&m_vboHandle);
       glBindBuffer(GL_ARRAY_BUFFER, m_vboHandle);
-      glBufferData(GL_ARRAY_BUFFER, m_vertexSize * m_vertexCount, m_data.get(), GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, m_vertexSize * m_vertexCount, m_data.get(), getGLDataType(m_dataType));
       glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 
       m_built = true;
    }
 
 public:
-   Model(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount)
+   Model(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount, ModelManager::DataStreamType dataType)
       : m_vertexSize(size),
       m_vertexCount(vCount),
       m_attrs(attrs, attrs + attrCount),
       m_data(new byte[size * vCount]),
-      m_built(false) {
+      m_built(false),
+      m_dirtyData(false),
+      m_dataType(dataType){
 
       //NEVERFORGET the night brandon spent 2 hours debugging empty data
       memcpy(m_data.get(), data, size * vCount);
@@ -60,12 +76,33 @@ public:
    ~Model() {
    }
 
+   void updateData(void *data, size_t size, size_t vCount) {
+      if (size != m_vertexSize || vCount != m_vertexCount) {
+         return; //picnic
+      }
+
+      if (m_dataType == ModelManager::Static) {
+         return; //picnic
+      }
+
+      if (!m_dataNewData) {
+         m_dataNewData.reset(new byte[size * vCount]);
+      }
+      memcpy(m_dataNewData.get(), data, size * vCount);
+      m_dirtyData = true;
+   }
+
    void bind() {
       if (!m_built) {
          build();
       }
 
       glBindBuffer(GL_ARRAY_BUFFER, m_vboHandle);
+
+      if (m_dataNewData && m_dirtyData) {
+         glBufferData(GL_ARRAY_BUFFER, m_vertexSize * m_vertexCount, m_dataNewData.get(), getGLDataType(m_dataType));
+         m_dirtyData = false;
+      }
 
       //clear current attribs
       for (unsigned int i = 0; i < (unsigned int)VertexAttribute::COUNT; ++i) {
@@ -100,7 +137,7 @@ public:
    }
 
    void render(ModelManager::RenderType type) {
-      static GLuint map[ModelManager::RenderType::COUNT];
+      static GLuint map[2];
       static bool mapInit = false;
       if (!mapInit) {
          mapInit = true;
@@ -112,8 +149,11 @@ public:
    }
 };
 
-Model *ModelManager::_create(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount) {
-   return new Model(data, size, vCount, attrs, attrCount);
+Model *ModelManager::_create(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount, DataStreamType dataType) {
+   return new Model(data, size, vCount, attrs, attrCount, dataType);
+}
+void ModelManager::_updateData(Model *self, void *data, size_t size, size_t vCount) {
+   self->updateData(data, size, vCount);
 }
 
 void ModelManager::destroy(Model *self) {

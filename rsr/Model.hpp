@@ -115,19 +115,35 @@ public:
 
 #pragma endregion
 
+
+
 class ModelManager {
-   static Model *_create(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount);
 public:
-   template<typename FVF>
-   static Model *create(FVF *data, size_t vCount) {
-      return _create(data, sizeof(FVF), vCount, FVF::attrs().data(), FVF::attrs().size());
-   }
+   enum DataStreamType {
+      Stream,
+      Static,
+      Dynamic
+   };
 
    enum RenderType {
       Triangles,
-      Lines,
-      COUNT
+      Lines
    };
+
+private:
+   static Model *_create(void *data, size_t size, size_t vCount, VertexAttribute *attrs, int attrCount, DataStreamType dataType);
+   static void _updateData(Model *self, void *data, size_t size, size_t vCount);
+
+public:
+   template<typename FVF>
+   static Model *create(std::vector<FVF> &data, DataStreamType dataType = Static) {
+      return _create((void*)data.data(), sizeof(FVF), data.size(), FVF::attrs().data(), FVF::attrs().size(), dataType);
+   }
+
+   template<typename FVF>
+   static void updateData(Model *self, std::vector<FVF> &data) {
+      return _updateData(self, data.data(), sizeof(FVF), data.size());
+   }
 
    static void destroy(Model *self);
    static void bind(Model *self);
