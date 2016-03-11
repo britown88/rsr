@@ -15,6 +15,7 @@ enum ShaderParams : int {
    Position2D = 1 << 1,
    DiffuseLighting = 1 << 2,
    ColorAttribute = 1 << 3,
+   Rotation = 1 << 4
 };
 
 class ShaderManager {

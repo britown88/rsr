@@ -12,27 +12,37 @@ struct BunnyModel {
 };
 
 struct Bunny {
-   const float wheelTurnRate = 1.0f;
+   const float WheelTurnRate = 0.25f;
+   const float ThrottleRate = 0.01f;
+   const float MaxTurnAngle = 15.0f;
+   const float MaxThrottle = 0.25f;
 
    Float3 pos, scale;
    ColorRGBAf color;
 
-   Matrix modelMatrix;
+   Matrix modelMatrix, rotation, debugLinesMatrix;
 
    std::vector<FVF_Pos3_Col4> debugLines;
    Model *debugLinesModel;
 
    enum Lines {
       Forward = 0,
-      Up,
-      Wheelbase,
-      FrontAxis,
-      BackAxis,
-      LineCount
+      Up = 2,
+      Wheelbase = 4,
+      FrontAxis = 6,
+      BackAxis = 8,
+      LineCount = 10
    };
 
    void createDebugLines() {
       debugLines.resize(LineCount, { {0.0f, 0.0f, 0.0f}, CommonColors::White});
+
+      debugLines[Forward].col4 = debugLines[Forward+1].col4 = CommonColors::Red;
+      debugLines[Up].col4 = debugLines[Up + 1].col4 = CommonColors::Green;
+      //debugLines[Wheelbase].col4 = debugLines[Wheelbase + 1].col4 = CommonColors::Blue;
+      debugLines[FrontAxis].col4 = debugLines[FrontAxis + 1].col4 = CommonColors::Blue;
+      debugLines[BackAxis].col4 = debugLines[BackAxis + 1].col4 = CommonColors::Blue;
+
       debugLinesModel = ModelManager::create(debugLines, ModelManager::Stream);
    }
 
@@ -46,37 +56,92 @@ struct Bunny {
    Control control;
 
    Float3 velocity, forward, up;
-   float turnAngle;
+   float wheelBase;
+   float steeringAngle;
+   float throttle;
 
    void updateDebugLines() {
+      debugLines[Forward + 1].pos3 = vec::mul(forward, 0.15f);
+      debugLines[Up + 1].pos3 = vec::mul(up, 0.15f);
+
+      auto frontCenter = vec::mul(forward, wheelBase * 0.5f);
+      auto backCenter = vec::mul(forward, -wheelBase * 0.5f);
+      auto axis = vec::normal(vec::cross(forward, up));
+      auto frontAxis = Quaternion::fromAxisAngle(up, steeringAngle * 3.0f).rotate(axis);
+
+      debugLines[FrontAxis].pos3 = vec::add(frontCenter, vec::mul(frontAxis, 0.15f));
+      debugLines[FrontAxis + 1].pos3 = vec::sub(frontCenter, vec::mul(frontAxis, 0.15f));
+
+      debugLines[BackAxis].pos3 = vec::add(backCenter, vec::mul(axis, 0.15f));
+      debugLines[BackAxis + 1].pos3 = vec::sub(backCenter, vec::mul(axis, 0.15f));
+
+
       ModelManager::updateData(debugLinesModel, debugLines);
+   }
+
+   void updateThrottle() {
+      if (control.forward) {
+         throttle = std::min(MaxThrottle, throttle + ThrottleRate);
+      }
+      else if (control.back) {
+         throttle = std::max(-MaxThrottle, throttle - ThrottleRate);
+      }
+      else {
+         if (throttle > 0.0001f) {
+            throttle = std::max(0.0f, throttle - ThrottleRate);
+         }
+         if (throttle < -0.0001f) {
+            throttle = std::min(0.0f, throttle + ThrottleRate);
+         }
+      }
+
    }
 
    void updateTurnAngle() {
       if (control.left) {
-         turnAngle = std::min(45.0f, turnAngle + wheelTurnRate);
+         steeringAngle = std::min(MaxTurnAngle, steeringAngle + WheelTurnRate);
       }
       else if (control.right) {
-         turnAngle = std::min(45.0f, turnAngle - wheelTurnRate);
+         steeringAngle = std::max(-MaxTurnAngle, steeringAngle - WheelTurnRate);
       }
       else {
-         if (turnAngle > 0.0001f) {
-            turnAngle = std::max(0.0f, turnAngle - wheelTurnRate);
+         if (steeringAngle > 0.0001f) {
+            steeringAngle = std::max(0.0f, steeringAngle - WheelTurnRate);
          }
-         else if (turnAngle < -0.0001f) {
-            turnAngle = std::min(0.0f, turnAngle + wheelTurnRate);
+         else if (steeringAngle < -0.0001f) {
+            steeringAngle = std::min(0.0f, steeringAngle + WheelTurnRate);
          }
       }
+   }
+
+   void updatePosition() {
+
+      if (fabs(throttle) > 0.001f) {
+         auto frontCenter = vec::mul(forward, wheelBase * 0.5f);
+         auto backCenter = vec::mul(forward, -wheelBase * 0.5f);
+
+         auto frontDir = Quaternion::fromAxisAngle(up, steeringAngle).rotate(forward);
+
+         frontCenter = vec::add(frontCenter, vec::mul(frontDir, throttle));
+         backCenter = vec::add(backCenter, vec::mul(forward, throttle));
+
+         forward = vec::normal(vec::sub(frontCenter, backCenter));
+         pos = vec::add(vec::add(pos, backCenter), vec::mul(forward, wheelBase * 0.5f));
+      }
+      
    }
 
    void updateMatrix() {
-      modelMatrix = Matrix::translate3f(pos)  * Matrix::scale3f(scale) * Matrix::fromBasis(forward, up, vec::cross(forward, up));
+      debugLinesMatrix = Matrix::translate3f(pos)  * Matrix::scale3f(scale);//unrotated
+      rotation = Matrix::fromBasis(forward, up, vec::cross(forward, up));
+      modelMatrix = debugLinesMatrix;
    }
 
    void update() {
+      updateThrottle();
       updateTurnAngle();
 
-
+      updatePosition();
       updateDebugLines();
       updateMatrix();
    }
@@ -120,7 +185,7 @@ class Game::Impl {
    Bunny m_bunny;
 
    void buildBunnyModel() {
-      m_bunnyModel.shader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
+      m_bunnyModel.shader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting|Rotation);
 
       auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
       if (!vertexSet.empty()) {
@@ -144,6 +209,7 @@ class Game::Impl {
 
       m_bunny.forward = { 0.0f, 0.0f, -1.0f };
       m_bunny.up = { 0.0f, 1.0f, 0.0f };
+      m_bunny.wheelBase = 0.25f;
 
       m_bunny.createDebugLines();
       m_bunny.update();
@@ -252,6 +318,11 @@ public:
          }
       }
 
+      m_bunny.control.left = k->isDown(Keys::Key_A);
+      m_bunny.control.right = k->isDown(Keys::Key_D);
+      m_bunny.control.forward = k->isDown(Keys::Key_W);
+      m_bunny.control.back = k->isDown(Keys::Key_S);
+
       k->flushQueue();
    }
 
@@ -290,6 +361,7 @@ public:
       Renderer &r = m_renderer;
 
       auto uModel = internString("uModelMatrix");
+      auto uModelRotation = internString("uModelRotation");
       auto uColor = internString("uColorTransform");
       auto uTexture = internString("uTexMatrix");
       auto uTextureSlot = internString("uTexture");
@@ -337,17 +409,19 @@ public:
 
       r.setShader(m_bunnyModel.shader);
       r.setMatrix(uModel, m_bunny.modelMatrix);
+      r.setMatrix(uModelRotation, m_bunny.rotation);
       r.setColor(uColor, m_bunny.color);
       r.renderModel(m_bunnyModel.renderModel);
 
       r.setShader(m_lineShader);
-      r.setMatrix(uModel, m_bunny.modelMatrix);
+      r.setMatrix(uModel, m_bunny.debugLinesMatrix);
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
 
 
       r.setShader(m_bunnyModel.shader);
       r.setMatrix(uModel, Matrix::identity());
+      r.setMatrix(uModelRotation, Matrix::identity());
       r.setColor(uColor, CommonColors::DkGray);
       r.renderModel(m_testTrack);
 

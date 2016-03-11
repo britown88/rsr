@@ -109,6 +109,7 @@ class Shader {
       std::string Position2DOption = "#define POSITION_2D\n";
       std::string DiffuseLightingOption = "#define DIFFUSE_LIGHTING\n";
       std::string ColorAttributeOption = "#define COLOR_ATTRIBUTE\n";
+      std::string RotationOption = "#define ROTATION\n";
 
       std::vector<const char*> vertShader, fragShader;
 
@@ -125,6 +126,9 @@ class Shader {
       }
       if (m_params&ColorAttribute) {
          vertShader.push_back(ColorAttributeOption.c_str());
+      }
+      if (m_params&Rotation) {
+         vertShader.push_back(RotationOption.c_str());
       }
       vertShader.push_back(file);
       auto vert = compile(vertShader, GL_VERTEX_SHADER);

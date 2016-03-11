@@ -66,6 +66,10 @@ layout(std140, binding = 0) uniform uboView{
    uniform mat4 uModelMatrix;
    uniform vec4 uColorTransform;
 
+   #ifdef ROTATION
+   uniform mat4 uModelRotation;
+   #endif
+
    in vec2 aPosition2;
    in vec3 aPosition3;
    in vec3 aNormal;
@@ -93,8 +97,11 @@ layout(std140, binding = 0) uniform uboView{
 	  #endif
 
 	  #ifdef DIFFUSE_LIGHTING
-	 // vNormal = mat3(transpose(inverse(uModelMatrix))) * aNormal; 
-	  vNormal = aNormal; 
+	     #ifdef ROTATION
+	     vNormal = mat3(uModelRotation) * aNormal;
+	     #else
+	     vNormal = aNormal;
+	     #endif
 	  #endif
       
       #ifdef DIFFUSE_TEXTURE
@@ -107,10 +114,16 @@ layout(std140, binding = 0) uniform uboView{
       vec4 position = vec4(aPosition2, 0, 1);
       #else
 	  vec4 position = vec4(aPosition3, 1);
-      #endif      
-
-	  vPosition = vec3(uModelMatrix * vec4(position.xyz, 1.0f));
+      #endif  
 	  
-      gl_Position = uViewMatrix * (uModelMatrix * position);;
+	  mat4 model = uModelMatrix;
+	  
+	  #ifdef ROTATION
+	  model *= uModelRotation;
+	  #endif
+
+	  vPosition = vec3(model * vec4(position.xyz, 1.0f));
+	  
+      gl_Position = uViewMatrix * (model * position);
    }
 #endif
