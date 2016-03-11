@@ -49,7 +49,7 @@ struct Bunny {
    }
 
    void updateMatrix() {
-      modelMatrix = Matrix::translate3f(pos) * Matrix::scale3f(scale);
+      modelMatrix = Matrix::translate3f(pos)  * Matrix::scale3f(scale) * Matrix::fromBasis(forward, up, vec::cross(forward, up));
    }
 
    void update() {
@@ -265,6 +265,9 @@ public:
       //   m_camera.eye.z = r * sin(rad);
       //   m_camera.eye.y = m_camera.eye.z / 2.5f;
       //}
+
+
+      m_bunny.update();
 
       updateKeyboard(m_window->getKeyboard());
       updateMouse(m_window->getMouse());

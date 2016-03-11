@@ -168,6 +168,7 @@ public:
    static Matrix scale3f(Float3 const &v);
    static Matrix translate2f(Float2 const &v);
    static Matrix translate3f(Float3 const &v);
+   static Matrix fromBasis(Float3 const &v1, Float3 const &v2, Float3 const &v3);
 
    Matrix &operator*=(Matrix const &rhs);
    Matrix operator*(Matrix const &rhs) const;

@@ -69,6 +69,16 @@ Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar) {
 //   return frustrum(-xmax, xmax, -ymax, ymax, zNear, zFar);
 //}
 
+Matrix Matrix::fromBasis(Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   Matrix out = identity();
+
+   out[0] = v1.x; out[1] = v1.y; out[2] = v1.z;
+   out[4] = v2.x; out[5] = v2.y; out[6] = v2.z;
+   out[8] = v3.x; out[9] = v3.y; out[10] = v3.z;
+
+   return out;
+}
+
 Matrix Matrix::lookAt(Float3 const &eye, Float3 const &center, Float3 const &up) {
    Matrix out = { 0 };
    Float3 n = vec::normal(vec::sub(eye, center));
