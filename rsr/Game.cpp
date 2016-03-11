@@ -5,14 +5,29 @@
 
 #include <algorithm>
 
+namespace Shaders {
+   static Shader *Skybox = nullptr;
+   static Shader *Wireframe = nullptr;
+   static Shader *Lines = nullptr;
+   static Shader *Bunny = nullptr;
+   static Shader *Track = nullptr;
+
+   static void build() {
+      Skybox = ShaderManager::create("assets/skybox.glsl");
+      Wireframe = ShaderManager::create("assets/wireframe.glsl");
+      Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
+      Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
+      Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
+   }
+}
+
 struct BunnyModel {
-   Shader *shader;
    ModelVertices vertices;
    Model *renderModel;
 };
 
 struct Bunny {
-   const float WheelTurnRate = 0.25f;
+   const float WheelTurnRate = 1.0f;
    const float ThrottleRate = 0.01f;
    const float MaxTurnAngle = 15.0f;
    const float MaxThrottle = 0.25f;
@@ -174,7 +189,6 @@ class Game::Impl {
    float m_axisScale = 10.0f;
 
    Model *m_skybox, *m_testTrack, *m_axisLines;
-   Shader *m_skyboxShader, *m_wireframeShader, *m_lineShader;
    UBO *m_testUBO;
    CubeMap *m_cubemap;
    TestUBO m_u;
@@ -185,7 +199,6 @@ class Game::Impl {
    Bunny m_bunny;
 
    void buildBunnyModel() {
-      m_bunnyModel.shader = ShaderManager::create("assets/shaders.glsl", DiffuseLighting|Rotation);
 
       auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
       if (!vertexSet.empty()) {
@@ -237,7 +250,6 @@ class Game::Impl {
          m_skybox = vertexSet[0].expandIndices().createModel();
       }
 
-      m_skyboxShader = ShaderManager::create("assets/skybox.glsl");
       m_cubemap = CubeMapManager::create({
          "assets/skybox3/right.png", 
          "assets/skybox3/left.png" , 
@@ -287,12 +299,8 @@ public:
    Impl(Renderer &r, Window *w):m_renderer(r), m_window(w) {}
 
    void onStartup() {
+      Shaders::build();
       
-   
-      m_lineShader = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
-
-      m_wireframeShader = ShaderManager::create("assets/wireframe.glsl");
-
       m_testUBO = UBOManager::create(sizeof(TestUBO));
       m_renderer.bindUBO(m_testUBO, 0);
 
@@ -384,7 +392,7 @@ public:
 
       r.enableDepth(false);
 
-      r.setShader(m_skyboxShader);
+      r.setShader(Shaders::Skybox);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
       r.renderModel(m_skybox);
@@ -400,28 +408,25 @@ public:
       r.setUBOData(m_testUBO, m_u);
       r.enableAlphaBlending(true);
 
-      r.setShader(m_lineShader);
+      r.setShader(Shaders::Lines);
       r.setMatrix(uModel, Matrix::scale3f(vec::mul({ 1.0f, 1.0f, 1.0f }, m_axisScale)));
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_axisLines, ModelManager::Lines);
 
-
-
-      r.setShader(m_bunnyModel.shader);
+      r.setShader(Shaders::Bunny);
       r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setMatrix(uModelRotation, m_bunny.rotation);
       r.setColor(uColor, m_bunny.color);
       r.renderModel(m_bunnyModel.renderModel);
 
-      r.setShader(m_lineShader);
+      r.setShader(Shaders::Lines);
       r.setMatrix(uModel, m_bunny.debugLinesMatrix);
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
 
 
-      r.setShader(m_bunnyModel.shader);
+      r.setShader(Shaders::Track);
       r.setMatrix(uModel, Matrix::identity());
-      r.setMatrix(uModelRotation, Matrix::identity());
       r.setColor(uColor, CommonColors::DkGray);
       r.renderModel(m_testTrack);
 
