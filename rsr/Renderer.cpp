@@ -56,6 +56,8 @@ public:
       m_wnd->beginRender();
       glewInit();
 
+      glLineWidth(2.0f);
+
       
    }
 

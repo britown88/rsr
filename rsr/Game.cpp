@@ -19,6 +19,23 @@ struct Bunny {
 
    Matrix modelMatrix;
 
+   std::vector<FVF_Pos3_Col4> debugLines;
+   Model *debugLinesModel;
+
+   enum Lines {
+      Forward = 0,
+      Up,
+      Wheelbase,
+      FrontAxis,
+      BackAxis,
+      LineCount
+   };
+
+   void createDebugLines() {
+      debugLines.resize(LineCount, { {0.0f, 0.0f, 0.0f}, CommonColors::White});
+      debugLinesModel = ModelManager::create(debugLines, ModelManager::Stream);
+   }
+
    struct Control {
       bool left = false;
       bool right = false;
@@ -30,6 +47,10 @@ struct Bunny {
 
    Float3 velocity, forward, up;
    float turnAngle;
+
+   void updateDebugLines() {
+      ModelManager::updateData(debugLinesModel, debugLines);
+   }
 
    void updateTurnAngle() {
       if (control.left) {
@@ -54,6 +75,9 @@ struct Bunny {
 
    void update() {
       updateTurnAngle();
+
+
+      updateDebugLines();
       updateMatrix();
    }
 };
@@ -82,7 +106,7 @@ class Game::Impl {
    Renderer &m_renderer;
    Window *m_window;
 
-   float m_axisScale = 1.0f;
+   float m_axisScale = 10.0f;
 
    Model *m_skybox, *m_testTrack, *m_axisLines;
    Shader *m_skyboxShader, *m_wireframeShader, *m_lineShader;
@@ -114,27 +138,28 @@ class Game::Impl {
    }
 
    void buildBunny() {      
-      m_bunny.pos = { 0.0f, 0.0f, 0.0f };
-      m_bunny.scale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
-      m_bunny.color = CommonColors::Yellow;
+      m_bunny.pos = { -50.0f, 1.0f, -50.0f };
+      m_bunny.scale = vec::mul({ 1.0f, 1.0f, 1.0f }, 20.0f);
+      m_bunny.color = CommonColors::Green;
 
       m_bunny.forward = { 0.0f, 0.0f, -1.0f };
       m_bunny.up = { 0.0f, 1.0f, 0.0f };
 
+      m_bunny.createDebugLines();
       m_bunny.update();
+      
    }
-
-
+   
    void buildTestLines() {
       std::vector<FVF_Pos3_Col4> vertices = {
-         { { -0.5f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-         { {  1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
+         { { -0.5f, 0.0f, 0.0f }, CommonColors::DkRed },
+         { {  1.0f, 0.0f, 0.0f }, CommonColors::Red },
 
-         { { 0.0f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-         { { 0.0f,  1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
+         { { 0.0f, -0.5f, 0.0f }, CommonColors::DkGreen },
+         { { 0.0f,  1.0f, 0.0f }, CommonColors::Green },
 
-         { { 0.0f, 0.0f, -0.5f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-         { { 0.0f, 0.0f,  1.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
+         { { 0.0f, 0.0f, -0.5f }, CommonColors::DkBlue },
+         { { 0.0f, 0.0f,  1.0f }, CommonColors::Blue }
       };
 
       m_axisLines = ModelManager::create(vertices);
@@ -159,11 +184,11 @@ class Game::Impl {
 
    void buildTestTrack() {
       std::vector<TrackPoint> pointList = {
-         { { -50.0f, -100.0f, -50.0f },   0.0f, 10.0f },
-         { {  50.0f, -100.0f,   -50.0f }, 20.0f, 10.0f },
-         { {  50.0f, -100.0f,  50.0f },   45.0f, 10.0f },
-         { { -50.0f, -100.0f,    50.0f }, 20.0f, 10.0f },
-         { { -50.0f, -100.0f, -50.0f },   0.0f, 10.0f }
+         { { -50.0f, 0.0f, -50.0f },   0.0f, 10.0f },
+         { {  50.0f, 0.0f,   -50.0f }, 20.0f, 10.0f },
+         { {  50.0f, 0.0f,  50.0f },   45.0f, 10.0f },
+         { { -50.0f, 0.0f,    50.0f }, 20.0f, 10.0f },
+         { { -50.0f, 0.0f, -50.0f },   0.0f, 10.0f }
       };
 
       m_testTrack = createTrackSegment(pointList, true);
@@ -184,9 +209,9 @@ class Game::Impl {
 
       m_camera.coords = { 1.0f, 0.0f, 90.0f };
       m_camera.followPoint = { 0.0f };
-      m_camera.distance = 100.0f;
+      m_camera.distance = 20.0f;
 
-      m_axisScale = m_camera.distance / 10.0f;
+      //m_axisScale = m_camera.distance / 10.0f;
 
       m_camera.update();
    }
@@ -237,15 +262,12 @@ public:
          case MouseActions::Mouse_Scrolled:
             m_camera.distance += -me->pos.y * 0.05f;
             m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance));
-            m_axisScale = m_camera.distance / 10.0f;
-            m_camera.update();
+            //m_axisScale = m_camera.distance / 10.0f;
             break;
          case MouseActions::Mouse_Moved:
             if (m->isDown(MouseButtons::MouseBtn_Right)) {
                m_camera.coords.dip = std::min(89.99f, std::max(-89.99f, m_camera.coords.dip + me->pos.y));
                m_camera.coords.azm += me->pos.x;
-               m_camera.update();
-
             }
             break;
          }
@@ -256,19 +278,9 @@ public:
    void update() {
       static int j = 0;
 
-      //if (j++ % 1 == 0) {
-      //   static int i = 0;
-      //   int a = ((i++) % 360);
-      //   float rad = a*DEG2RAD;
-      //   float r = 250.0f;
-
-      //   m_camera.eye.x = r * cos(rad);
-      //   m_camera.eye.z = r * sin(rad);
-      //   m_camera.eye.y = m_camera.eye.z / 2.5f;
-      //}
-
-
       m_bunny.update();
+      m_camera.followPoint = m_bunny.pos;
+      m_camera.update();      
 
       updateKeyboard(m_window->getKeyboard());
       updateMouse(m_window->getMouse());
@@ -328,22 +340,29 @@ public:
       r.setColor(uColor, m_bunny.color);
       r.renderModel(m_bunnyModel.renderModel);
 
-
-      r.setMatrix(uModel, Matrix::identity());
+      r.setShader(m_lineShader);
+      r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setColor(uColor, CommonColors::White);
+      r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
+
+
+      r.setShader(m_bunnyModel.shader);
+      r.setMatrix(uModel, Matrix::identity());
+      r.setColor(uColor, CommonColors::DkGray);
       r.renderModel(m_testTrack);
 
-      r.enableWireframe(true);
-      r.setShader(m_wireframeShader);
-      r.setColor(uColor, CommonColors::Cyan);
+      //wireframes
+      //r.enableWireframe(true);
+      //r.setShader(m_wireframeShader);
+      //r.setColor(uColor, CommonColors::Cyan);
 
       //r.setMatrix(uModel, m_bunny.modelMatrix);
-      //r.renderModel(m_bunny.model);
+      //r.renderModel(m_bunnyModel.renderModel);
 
-      r.setMatrix(uModel, Matrix::identity());
+      //r.setMatrix(uModel, Matrix::identity());
       //r.renderModel(m_testTrack);
 
-      r.enableWireframe(false);
+      //r.enableWireframe(false);
 
       r.enableAlphaBlending(false);
 
