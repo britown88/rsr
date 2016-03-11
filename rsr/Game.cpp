@@ -12,6 +12,8 @@ struct BunnyModel {
 };
 
 struct Bunny {
+   const float wheelTurnRate = 1.0f;
+
    Float3 pos, scale;
    ColorRGBAf color;
 
@@ -26,11 +28,32 @@ struct Bunny {
 
    Control control;
 
+   Float3 velocity, forward, up;
+   float turnAngle;
+
+   void updateTurnAngle() {
+      if (control.left) {
+         turnAngle = std::min(45.0f, turnAngle + wheelTurnRate);
+      }
+      else if (control.right) {
+         turnAngle = std::min(45.0f, turnAngle - wheelTurnRate);
+      }
+      else {
+         if (turnAngle > 0.0001f) {
+            turnAngle = std::max(0.0f, turnAngle - wheelTurnRate);
+         }
+         else if (turnAngle < -0.0001f) {
+            turnAngle = std::min(0.0f, turnAngle + wheelTurnRate);
+         }
+      }
+   }
+
    void updateMatrix() {
       modelMatrix = Matrix::translate3f(pos) * Matrix::scale3f(scale);
    }
 
    void update() {
+      updateTurnAngle();
       updateMatrix();
    }
 };
@@ -78,7 +101,7 @@ class Game::Impl {
       auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
       if (!vertexSet.empty()) {
          auto &vs = vertexSet[0];
-         auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, -90.0f);
+         auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, 180.0f);
          for (auto &p : vs.positions) {
             p.y -= 0.075f;
             p.z -= 0.01f;
@@ -94,6 +117,9 @@ class Game::Impl {
       m_bunny.pos = { 0.0f, 0.0f, 0.0f };
       m_bunny.scale = vec::mul({ 1.0f, 1.0f, 1.0f }, 100.0f);
       m_bunny.color = CommonColors::Yellow;
+
+      m_bunny.forward = { 0.0f, 0.0f, -1.0f };
+      m_bunny.up = { 0.0f, 1.0f, 0.0f };
 
       m_bunny.update();
    }

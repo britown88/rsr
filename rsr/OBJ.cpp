@@ -65,9 +65,10 @@ static int readInt(std::string &str) {
 struct OBJData {
    ModelVertices v;
 
-   FILE* file;
-   char line[256];
+   FILE* file = nullptr;
+   char line[256] = { 0 };
    TokenList tokens;
+   bool processingFaces = false;
 };
 
 enum class LineResult : unsigned int{
@@ -151,30 +152,30 @@ static LineResult processLine(TokenList &tokens, OBJData &data) {
 
       return LineResult::Face;
    }
-   else if (cmd == "v" && tokenCount >= 3) {
-
-      data.v.positions.push_back({ readFloat(tokens[1]), readFloat(tokens[2]), readFloat(tokens[3]) });
-
-      //optional color
-      if (tokenCount == 6) {
-         data.v.colors.push_back({ readFloat(tokens[4]), readFloat(tokens[5]), readFloat(tokens[6]), 1.0f });
-      }
-      else if (tokenCount == 7) {
-         //account for w
-         data.v.colors.push_back({ readFloat(tokens[5]), readFloat(tokens[6]), readFloat(tokens[7]), 1.0f });
-      }
+   else if (cmd == "v") {
+      if (!data.processingFaces && tokenCount >= 3) {
+         data.v.positions.push_back({ readFloat(tokens[1]), readFloat(tokens[2]), readFloat(tokens[3]) });
+         //optional color
+         if (tokenCount == 6) {
+            data.v.colors.push_back({ readFloat(tokens[4]), readFloat(tokens[5]), readFloat(tokens[6]), 1.0f });
+         }
+         else if (tokenCount == 7) {
+            //account for w
+            data.v.colors.push_back({ readFloat(tokens[5]), readFloat(tokens[6]), readFloat(tokens[7]), 1.0f });
+         }
+      }      
 
       return LineResult::Vertex;
    }
    else if (cmd == "vt") {
-      if (tokenCount >= 2) {
+      if (!data.processingFaces && tokenCount >= 2) {
          data.v.textures.push_back({ readFloat(tokens[1]), readFloat(tokens[2]) });
       }
       
       return LineResult::Vertex;
    }
    else if (cmd == "vn" ) {
-      if (tokenCount >= 3) {
+      if (!data.processingFaces && tokenCount >= 3) {
          data.v.normals.push_back(vec::normal<float>({ readFloat(tokens[1]), readFloat(tokens[2]), readFloat(tokens[3]) }));
       }
       
@@ -203,21 +204,48 @@ std::vector<ModelVertices> ModelVertices::fromOBJ(const char *file) {
    while (fgets(data.line, sizeof(data.line), data.file)) {
       split(data.line, data.tokens);
 
-      if (!data.tokens.empty()) {
-         switch (processLine(data.tokens, data)) {
-         case LineResult::Vertex:
-         case LineResult::Face:
-         case LineResult::Unused:
-            break;
-         case LineResult::NewGroup:
-         case LineResult::NewObject:
-            if (!data.v.positionIndices.empty()) {
-               out.push_back(std::move(data.v));
-               data.v = ModelVertices();
+      bool repeat = false;
+      do {
+         repeat = false;
+         if (!data.tokens.empty()) {
+            switch (processLine(data.tokens, data)) {
+            case LineResult::Face:
+               data.processingFaces = true;
+               break;
+            case LineResult::Vertex:            
+               if (data.processingFaces) {
+                  if (!data.v.positionIndices.empty()) {
+                     out.push_back(std::move(data.v));
+                     data.v = ModelVertices();
+                  }
+                  data.processingFaces = false;
+                  repeat = true;
+               }
+               break;
+            case LineResult::NewObject:
+               if (!data.v.positionIndices.empty()) {
+                  out.push_back(data.v);
+                  data.v.positionIndices.clear();
+                  data.v.textureIndices.clear();
+                  data.v.normalIndices.clear();
+                  data.processingFaces = false;
+               }
+               break;
+            case LineResult::NewGroup:            
+               if (!data.v.positionIndices.empty()) {
+                  out.push_back(std::move(data.v));
+                  data.v = ModelVertices();
+                  data.processingFaces = false;
+               }
+               break;
+
+            default:
+               break;
             }
-            break;
+
+            
          }
-      }
+      } while (repeat);
    }
 
    if (!data.v.positionIndices.empty()) {
