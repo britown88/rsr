@@ -45,47 +45,40 @@ struct Spherical {
    }
 };
 
+struct Plane {
+   Float3 pos, normal;
+   bool behind(Plane const &p, Float3 const &point);
+};
+
+struct ConvexHull {
+   std::vector<Float3> vertices;
+   std::vector<Plane> planes;
+};
+
+std::vector<Float3> quickHull(std::vector<Float3> &pointCloud);
+
 namespace vec
 {
-   template<typename T>
-   Vec3<T> cross(Vec3<T> const &v1, Vec3<T> const &v2) {
-      Vec3<T> out = {
-         (v1.y * v2.z) - (v1.z*v2.y),
-            (v1.z*v2.x) - (v1.x*v2.z),
-            (v1.x*v2.y) - (v1.y*v2.x)
-      };
-      return out;
-   }
-
-   template<typename T>
-   T dot(Vec3<T> const &v1, Vec3<T> const &v2) {
-      return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
-   }
-
    template<typename T>
    Vec3<T> add(Vec3<T> const &v1, Vec3<T> const &v2) {
       Vec3<T> out = {v1.x + v2.x, v1.y + v2.y, v1.z + v2.z};
       return out;
    }
-
    template<typename T>
    Vec3<T> sub(Vec3<T> const &v1, Vec3<T> const &v2) {
       Vec3<T> out = { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
       return out;
    }
-
    template<typename T>
    Vec3<T> negate(Vec3<T> const &v) {
       Vec3<T> out = { -v.x, -v.y, -v.z };
       return out;
    }
-
    template<typename T>
    Vec3<T> mul(Vec3<T> const &v, T s) {
       Vec3<T> out = { v.x * s, v.y * s, v.z * s };
       return out;
    }
-
    template<typename T>
    Vec3<T> linterp(Vec3<T> const &v1, Vec3<T> const &v2, float t) {
       Vec3<T> out = { 
@@ -95,7 +88,6 @@ namespace vec
          };
       return out;
    }
-
    template<typename T>
    Vec3<T> cinterp(Vec3<T> const &v1, Vec3<T> const &v2, Vec3<T> const &v3, Vec3<T> const &v4, float t) {
       Vec3<T> out = {
@@ -105,26 +97,30 @@ namespace vec
       };
       return out;
    }
+   
+   Float3 cross(Float3 const &v1, Float3 const &v2);
+   float dot(Float3 const &v1, Float3 const &v2);
+   Float3 normal(Float3 const &v);
 
-   template<typename T>
-   Vec3<T> normal(Vec3<T> const &v) {
-      return mul(v, 1.0f / sqrtf(dot(v, v)));
-   }
+   float lensq(Float3 const &v);
+   float len(Float3 const &v);
 
-   template<typename T>
-   float len(Vec3<T> const &v) {
-      return sqrtf(dot(v, v));
-   }
+   Float3 faceNormal(Float3 const &v1, Float3 const &v2, Float3 const &v3);
 
-   static Spherical toSpherical(Float3 const &v) {
-      Spherical out;
+   float distPoint2Line(Float3 const &p, Float3 const &v1, Float3 const &v2);
+   float distPoint2LineSegment(Float3 const &p, Float3 const &v1, Float3 const &v2);
+   float distPoint2Plane(Float3 const &pt, Plane const &pl);
 
-      out.r = len(v);
-      out.dip = asinf(v.y / out.r) * RAD2DEG;
-      out.azm = atan2f(v.z, v.x) * RAD2DEG;
+   //calculates the normal
+   float distPoint2Face(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3);
 
-      return out;
-   }
+   //pass in precalculated normal
+   float distPoint2FaceWithNormal(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3, Float3 const &n);
+
+   Float3 projectPoint2Plane(Float3 const &p, Float3 const &plo, Float3 const &pln);
+   bool pointInTriangle(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3);
+
+   Spherical toSpherical(Float3 const &v);
 }
 
 template<typename T>
@@ -141,20 +137,7 @@ T width(Rect<T> const &r) { return r.bot.x - r.top.x; }
 template<typename T>
 T height(Rect<T> const &r) { return r.bot.y - r.top.y; }
 
-struct Plane {
-   Float3 pos, normal;
 
-   static bool above(Plane const &p, Float3 const &point) {
-      return vec::dot(vec::sub(p.pos, point), p.normal) > 0;
-   }
-};
-
-struct ConvexHull {
-   std::vector<Float3> vertices;
-   std::vector<Plane> planes;
-};
-
-ConvexHull quickHull(std::vector<Float3> &pointCloud);
 
 struct  Matrix {
    float data[16];
@@ -169,6 +152,9 @@ public:
    static Matrix translate2f(Float2 const &v);
    static Matrix translate3f(Float3 const &v);
    static Matrix fromBasis(Float3 const &v1, Float3 const &v2, Float3 const &v3);
+   static Matrix invert(Matrix const &m);
+   static Matrix transpose(Matrix const &m);
+
 
    Matrix &operator*=(Matrix const &rhs);
    Matrix operator*(Matrix const &rhs) const;

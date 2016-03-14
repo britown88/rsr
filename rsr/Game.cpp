@@ -9,6 +9,7 @@ namespace Shaders {
    static Shader *Skybox = nullptr;
    static Shader *Wireframe = nullptr;
    static Shader *Lines = nullptr;
+   static Shader *RLines = nullptr;
    static Shader *Bunny = nullptr;
    static Shader *Track = nullptr;
 
@@ -16,6 +17,7 @@ namespace Shaders {
       Skybox = ShaderManager::create("assets/skybox.glsl");
       Wireframe = ShaderManager::create("assets/wireframe.glsl");
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
+      RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
       Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
    }
@@ -23,14 +25,14 @@ namespace Shaders {
 
 struct BunnyModel {
    ModelVertices vertices;
-   Model *renderModel;
+   Model *renderModel, *hullModel;
 };
 
 struct Bunny {
    const float WheelTurnRate = 1.0f;
    const float ThrottleRate = 0.01f;
-   const float MaxTurnAngle = 15.0f;
-   const float MaxThrottle = 0.25f;
+   const float MaxTurnAngle = 1.0f;
+   const float MaxThrottle = 0.5f;
 
    Float3 pos, scale;
    ColorRGBAf color;
@@ -82,7 +84,7 @@ struct Bunny {
       auto frontCenter = vec::mul(forward, wheelBase * 0.5f);
       auto backCenter = vec::mul(forward, -wheelBase * 0.5f);
       auto axis = vec::normal(vec::cross(forward, up));
-      auto frontAxis = Quaternion::fromAxisAngle(up, steeringAngle * 3.0f).rotate(axis);
+      auto frontAxis = Quaternion::fromAxisAngle(up, steeringAngle * 10.0f).rotate(axis);
 
       debugLines[FrontAxis].pos3 = vec::add(frontCenter, vec::mul(frontAxis, 0.15f));
       debugLines[FrontAxis + 1].pos3 = vec::sub(frontCenter, vec::mul(frontAxis, 0.15f));
@@ -204,14 +206,30 @@ class Game::Impl {
       if (!vertexSet.empty()) {
          auto &vs = vertexSet[0];
          auto q = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, 180.0f);
+         int i = 0;
          for (auto &p : vs.positions) {
             p.y -= 0.075f;
             p.z -= 0.01f;
             p = q.rotate(p);
+
+            //if (p.y > 0.03f && p.x > 0.05) {
+            //   p = vec::sub(p, { 0.1f, 0.0f, 0.0f });
+            //   p = Quaternion::fromAxisAngle({ 0.0f, 1.0f, 0.0f }, -45.0f).rotate(p);
+            //   p = vec::add(p, { 0.1f, 0.0f, 0.0f });
+            //   p.z += 0.02f;
+            //}
          }
+
+         ModelVertices qh;
+         qh.positions = quickHull(vs.positions);
+
+         m_bunnyModel.hullModel = qh.createModel();
+
 
          m_bunnyModel.vertices = vs.calculateNormals();
          m_bunnyModel.renderModel = vs.expandIndices().createModel(ModelOpts::IncludeNormals);
+
+         
       }
    }
 
@@ -303,6 +321,7 @@ public:
       
       m_testUBO = UBOManager::create(sizeof(TestUBO));
       m_renderer.bindUBO(m_testUBO, 0);
+
 
       buildCamera();
       buildSkybox();
@@ -420,6 +439,7 @@ public:
       r.renderModel(m_bunnyModel.renderModel);
 
       r.setShader(Shaders::Lines);
+
       r.setMatrix(uModel, m_bunny.debugLinesMatrix);
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
@@ -429,6 +449,14 @@ public:
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::DkGray);
       r.renderModel(m_testTrack);
+
+      r.setShader(Shaders::RLines);
+      r.setMatrix(uModel, m_bunny.modelMatrix);
+      r.setMatrix(uModelRotation, m_bunny.rotation);
+      r.setColor(uColor, CommonColors::White);
+      r.enableDepth(false);
+      r.renderModel(m_bunnyModel.hullModel, ModelManager::Lines);
+      r.enableDepth(true);
 
       //wireframes
       //r.enableWireframe(true);

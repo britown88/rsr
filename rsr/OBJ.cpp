@@ -176,7 +176,7 @@ static LineResult processLine(TokenList &tokens, OBJData &data) {
    }
    else if (cmd == "vn" ) {
       if (!data.processingFaces && tokenCount >= 3) {
-         data.v.normals.push_back(vec::normal<float>({ readFloat(tokens[1]), readFloat(tokens[2]), readFloat(tokens[3]) }));
+         data.v.normals.push_back(vec::normal({ readFloat(tokens[1]), readFloat(tokens[2]), readFloat(tokens[3]) }));
       }
       
       return LineResult::Vertex;

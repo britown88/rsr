@@ -1,6 +1,7 @@
 #include "Geom.hpp"
 #include "Defs.hpp"
 #include <math.h>
+#include <algorithm>
 
 Matrix Matrix::identity() {
    Matrix out = { 0 };
@@ -39,35 +40,6 @@ Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar) {
 
    return out;
 }
-
-//Matrix frustrum(float left, float right, float bottom, float top, float znear, float zfar)
-//{
-//   Matrix out = { 0 };
-//   float temp, temp2, temp3, temp4;
-//   temp = 2.0 * znear;
-//   temp2 = right - left;
-//   temp3 = top - bottom;
-//   temp4 = zfar - znear;
-//
-//   out[0] = temp / temp2;
-//   out[5] = temp / temp3;
-//   out[8] = (right + left) / temp2;
-//   out[9] = (top + bottom) / temp3;
-//   out[10] = (-zfar - znear) / temp4;
-//   out[11] = -1.0;
-//   out[14] = (-temp * zfar) / temp4;
-//
-//   return out;
-//}
-//
-//Matrix Matrix::perspective(float fovy, float aspect, float zNear, float zFar)
-//{
-//   float ymax, xmax;
-//   float temp, temp2, temp3, temp4;
-//   ymax = zNear * tanf(fovy * 3.14159265f / 360.0);
-//   xmax = ymax * aspect;
-//   return frustrum(-xmax, xmax, -ymax, ymax, zNear, zFar);
-//}
 
 Matrix Matrix::fromBasis(Float3 const &v1, Float3 const &v2, Float3 const &v3) {
    Matrix out = identity();
@@ -132,7 +104,160 @@ Matrix Matrix::translate3f(Float3 const &v) {
    out[14] = v.z;
    return out;
 }
+Matrix Matrix::invert(Matrix const &m) {
+   Matrix inv;
+   double det;
+   int i;
 
+   inv[0] = m[5] * m[10] * m[15] -
+      m[5] * m[11] * m[14] -
+      m[9] * m[6] * m[15] +
+      m[9] * m[7] * m[14] +
+      m[13] * m[6] * m[11] -
+      m[13] * m[7] * m[10];
+
+   inv[4] = -m[4] * m[10] * m[15] +
+      m[4] * m[11] * m[14] +
+      m[8] * m[6] * m[15] -
+      m[8] * m[7] * m[14] -
+      m[12] * m[6] * m[11] +
+      m[12] * m[7] * m[10];
+
+   inv[8] = m[4] * m[9] * m[15] -
+      m[4] * m[11] * m[13] -
+      m[8] * m[5] * m[15] +
+      m[8] * m[7] * m[13] +
+      m[12] * m[5] * m[11] -
+      m[12] * m[7] * m[9];
+
+   inv[12] = -m[4] * m[9] * m[14] +
+      m[4] * m[10] * m[13] +
+      m[8] * m[5] * m[14] -
+      m[8] * m[6] * m[13] -
+      m[12] * m[5] * m[10] +
+      m[12] * m[6] * m[9];
+
+   inv[1] = -m[1] * m[10] * m[15] +
+      m[1] * m[11] * m[14] +
+      m[9] * m[2] * m[15] -
+      m[9] * m[3] * m[14] -
+      m[13] * m[2] * m[11] +
+      m[13] * m[3] * m[10];
+
+   inv[5] = m[0] * m[10] * m[15] -
+      m[0] * m[11] * m[14] -
+      m[8] * m[2] * m[15] +
+      m[8] * m[3] * m[14] +
+      m[12] * m[2] * m[11] -
+      m[12] * m[3] * m[10];
+
+   inv[9] = -m[0] * m[9] * m[15] +
+      m[0] * m[11] * m[13] +
+      m[8] * m[1] * m[15] -
+      m[8] * m[3] * m[13] -
+      m[12] * m[1] * m[11] +
+      m[12] * m[3] * m[9];
+
+   inv[13] = m[0] * m[9] * m[14] -
+      m[0] * m[10] * m[13] -
+      m[8] * m[1] * m[14] +
+      m[8] * m[2] * m[13] +
+      m[12] * m[1] * m[10] -
+      m[12] * m[2] * m[9];
+
+   inv[2] = m[1] * m[6] * m[15] -
+      m[1] * m[7] * m[14] -
+      m[5] * m[2] * m[15] +
+      m[5] * m[3] * m[14] +
+      m[13] * m[2] * m[7] -
+      m[13] * m[3] * m[6];
+
+   inv[6] = -m[0] * m[6] * m[15] +
+      m[0] * m[7] * m[14] +
+      m[4] * m[2] * m[15] -
+      m[4] * m[3] * m[14] -
+      m[12] * m[2] * m[7] +
+      m[12] * m[3] * m[6];
+
+   inv[10] = m[0] * m[5] * m[15] -
+      m[0] * m[7] * m[13] -
+      m[4] * m[1] * m[15] +
+      m[4] * m[3] * m[13] +
+      m[12] * m[1] * m[7] -
+      m[12] * m[3] * m[5];
+
+   inv[14] = -m[0] * m[5] * m[14] +
+      m[0] * m[6] * m[13] +
+      m[4] * m[1] * m[14] -
+      m[4] * m[2] * m[13] -
+      m[12] * m[1] * m[6] +
+      m[12] * m[2] * m[5];
+
+   inv[3] = -m[1] * m[6] * m[11] +
+      m[1] * m[7] * m[10] +
+      m[5] * m[2] * m[11] -
+      m[5] * m[3] * m[10] -
+      m[9] * m[2] * m[7] +
+      m[9] * m[3] * m[6];
+
+   inv[7] = m[0] * m[6] * m[11] -
+      m[0] * m[7] * m[10] -
+      m[4] * m[2] * m[11] +
+      m[4] * m[3] * m[10] +
+      m[8] * m[2] * m[7] -
+      m[8] * m[3] * m[6];
+
+   inv[11] = -m[0] * m[5] * m[11] +
+      m[0] * m[7] * m[9] +
+      m[4] * m[1] * m[11] -
+      m[4] * m[3] * m[9] -
+      m[8] * m[1] * m[7] +
+      m[8] * m[3] * m[5];
+
+   inv[15] = m[0] * m[5] * m[10] -
+      m[0] * m[6] * m[9] -
+      m[4] * m[1] * m[10] +
+      m[4] * m[2] * m[9] +
+      m[8] * m[1] * m[6] -
+      m[8] * m[2] * m[5];
+
+   det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+   det = 1.0 / det;
+
+   Matrix out = { 0 };
+   if (det == 0) {
+      return out;
+   }
+
+   for (i = 0; i < 16; i++) {
+      out[i] = inv[i] * det;
+   }
+
+   return out;
+}
+
+Matrix Matrix::transpose(Matrix const &m) {
+   Matrix out;
+
+   out[0] = m[0];
+   out[1] = m[4];
+   out[2] = m[8];
+   out[3] = m[12];
+   out[4] = m[1];
+   out[5] = m[5];
+   out[6] = m[9];
+   out[7] = m[13];
+   out[8] = m[2];
+   out[9] = m[6];
+   out[10] = m[10];
+   out[11] = m[14];
+   out[12] = m[3];
+   out[13] = m[7];
+   out[14] = m[11];
+   out[15] = m[15];
+
+   return out;
+}
 
 Matrix &Matrix::operator*=(Matrix const &rhs) {
    *this = *this * rhs;
@@ -163,9 +288,9 @@ Matrix Matrix::operator*(Matrix const &rhs) const {
 Float3 Matrix::operator*(Float3 const &rhs) const {
    Float3 out;
    
-   out.x = (data[0] * rhs.x) + (data[5] * rhs.x) + (data[9] * rhs.x) + (data[13] * rhs.x);
-   out.y = (data[1] * rhs.y) + (data[6] * rhs.y) + (data[10] * rhs.y) + (data[14] * rhs.y);
-   out.z = (data[2] * rhs.z) + (data[7] * rhs.z) + (data[11] * rhs.z) + (data[15] * rhs.z);
+   out.x = vec::dot(rhs, { data[0] , data[4] , data[8] });
+   out.y = vec::dot(rhs, { data[1] , data[5] , data[9] });
+   out.z = vec::dot(rhs, { data[2] , data[6] , data[10] });
 
    return out;
 }
@@ -236,5 +361,98 @@ float cinterp(float y0, float y1, float y2, float y3, float mu) {
 
    return(a0*mu*mu2 + a1*mu2 + a2*mu + a3);
 
+}
+
+bool Plane::behind(Plane const &p, Float3 const &point) {
+   return vec::dot(vec::sub(p.pos, point), p.normal) <= 0;
+}
+
+Float3 vec::cross(Float3 const &v1, Float3 const &v2) {
+   Float3 out = {
+      (v1.y * v2.z) - (v1.z*v2.y),
+      (v1.z*v2.x) - (v1.x*v2.z),
+      (v1.x*v2.y) - (v1.y*v2.x)
+   };
+   return out;
+}
+
+float vec::dot(Float3 const &v1, Float3 const &v2) {
+   return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
+}
+
+Float3 vec::normal(Float3 const &v) {
+   return mul(v, 1.0f / sqrtf(dot(v, v)));
+}
+
+float vec::lensq(Float3 const &v) {
+   return dot(v, v);
+}
+
+float vec::len(Float3 const &v) {
+   return sqrtf(lensq(v));
+}
+
+Float3 vec::faceNormal(Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   return normal(cross(sub(v2, v1), sub(v3, v1)));
+}
+
+float vec::distPoint2Line(Float3 const &p, Float3 const &v1, Float3 const &v2) {
+   return len(cross(sub(p, v1), sub(p, v2))) / len(sub(v2, v1));
+}
+float vec::distPoint2LineSegment(Float3 const &p, Float3 const &v1, Float3 const &v2) {
+   float t = std::min(1.0f, std::max(0.0f, dot(sub(v1, p), sub(v2, v1)) / lensq(sub(v2, v1))));
+   float x = (v1.x - p.x) + (v2.x - v1.x) * t;
+   float y = (v1.y - p.y) + (v2.y - v1.y) * t;
+   float z = (v1.z - p.z) + (v2.z - v1.z) * t;
+   return x*x + y*y + z*z;
+}
+float vec::distPoint2Plane(Float3 const &pt, Plane const &pl) {
+   auto projected = projectPoint2Plane(pt, pl.pos, pl.normal);
+   return len(sub(pt, projected));
+}
+
+//calculates the normal
+float vec::distPoint2Face(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   return distPoint2FaceWithNormal(p, v1, v2, v3, faceNormal(v1, v2, v3));
+}
+
+//pass in precalculated normal
+float vec::distPoint2FaceWithNormal(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3, Float3 const &n) {
+   auto projected = projectPoint2Plane(p, v1, n);
+
+   if (pointInTriangle(projected, v1, v2, v3)) {
+      return len(sub(p, projected));
+   }
+   else {
+      float d1 = distPoint2LineSegment(p, v1, v2);
+      float d2 = distPoint2LineSegment(p, v1, v3);
+      float d3 = distPoint2LineSegment(p, v2, v3);
+      return std::min(d1, std::min(d2, d3));
+   }
+}
+
+Float3 vec::projectPoint2Plane(Float3 const &p, Float3 const &plo, Float3 const &pln) {
+   return sub(p, mul(pln, dot(sub(p, plo), pln)));;
+}
+
+static bool sameSide(Float3 const &p1, Float3 const &p2, Float3 const &a, Float3 const &b) {
+   auto c1 = vec::cross(vec::sub(b, a), vec::sub(p1, a));
+   auto c2 = vec::cross(vec::sub(b, a), vec::sub(p2, a));
+   return vec::dot(c1, c2) >= 0.0f;
+}
+
+bool vec::pointInTriangle(Float3 const &p, Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   return sameSide(p, v1, v2, v3) && sameSide(p, v2, v1, v3) && sameSide(p, v3, v1, v2);
+}
+
+
+Spherical vec::toSpherical(Float3 const &v) {
+   Spherical out;
+
+   out.r = len(v);
+   out.dip = asinf(v.y / out.r) * RAD2DEG;
+   out.azm = atan2f(v.z, v.x) * RAD2DEG;
+
+   return out;
 }
 
