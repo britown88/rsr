@@ -53,7 +53,7 @@ std::vector<Float3> quickHull(std::vector<Float3> &pointCloud) {
          continue;
       }
 
-      float d = vec::distPoint2LineSegment(pointCloud[EP[i]], v1, v2);
+      float d = fabs(vec::distPoint2LineSegment(pointCloud[EP[i]], v1, v2));
       if (d > dist) {
          dist = d;
          base.vertices[2] = EP[i];
@@ -71,7 +71,7 @@ std::vector<Float3> quickHull(std::vector<Float3> &pointCloud) {
    auto baseNormal = vec::faceNormal(v1, v2, v3);
    int fourth = -1;
    for (auto &p : pointCloud) {
-      float d = vec::distPoint2FaceWithNormal(p, v1, v2, v3, baseNormal);
+      float d = fabs(vec::distPoint2FaceWithNormal(p, v1, v2, v3, baseNormal));
       if (d > dist) {
          dist = d;
          fourth = i;

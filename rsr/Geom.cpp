@@ -400,11 +400,13 @@ float vec::distPoint2Line(Float3 const &p, Float3 const &v1, Float3 const &v2) {
    return len(cross(sub(p, v1), sub(p, v2))) / len(sub(v2, v1));
 }
 float vec::distPoint2LineSegment(Float3 const &p, Float3 const &v1, Float3 const &v2) {
-   float t = std::min(1.0f, std::max(0.0f, dot(sub(v1, p), sub(v2, v1)) / lensq(sub(v2, v1))));
-   float x = (v1.x - p.x) + (v2.x - v1.x) * t;
-   float y = (v1.y - p.y) + (v2.y - v1.y) * t;
-   float z = (v1.z - p.z) + (v2.z - v1.z) * t;
-   return x*x + y*y + z*z;
+   float t = std::min(1.0f, std::max(0.0f, -dot(sub(v1, p), sub(v2, v1)) / lensq(sub(v2, v1))));
+   
+   Float3 vo;
+   vo.x = (v1.x - p.x) + (v2.x - v1.x) * t;
+   vo.y = (v1.y - p.y) + (v2.y - v1.y) * t;
+   vo.z = (v1.z - p.z) + (v2.z - v1.z) * t;
+   return len(vo);
 }
 float vec::distPoint2Plane(Float3 const &pt, Plane const &pl) {
    auto projected = projectPoint2Plane(pt, pl.pos, pl.normal);
