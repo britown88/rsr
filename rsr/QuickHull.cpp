@@ -3,57 +3,63 @@
 #include <vector>
 #include <list>
 
-struct FaCE;
-
-struct AdjFace {
-   int verts[3];
-   Plane pln;
-   //static AdjFace fromFace(Face const &f);
-};
+typedef std::vector<Float3> PointCloud;
+typedef std::list<int> FaceList;
 
 struct Face {
    int verts[3];
    Plane pln;
    std::vector<int> points;
    
-   //0->1, 1->2, 2->0
-   AdjFace adjacency[3];
+   //edges
+   enum {
+      Edge0_1,
+      Edge1_2,
+      Edge2_0
+   };
 
-   void buildPlane(std::vector<Float3> &pointCloud) {
-      pln = Plane::fromFace(pointCloud[verts[0]], pointCloud[verts[1]], pointCloud[verts[2]]);
+   //indices into qh face vector (3 edges)
+   int adjFaces[3];
+   
+
+   void buildPlane(std::vector<Float3> &pts) {
+      pln = Plane::fromFace(pts[verts[0]], pts[verts[1]], pts[verts[2]]);
+   }
+
+   //given a faceindex f and one of its edges, return the index into
+   //the adjacent face's edge list that connects to f
+   static int oppositeEdgeIndex(int f, int edge, std::vector<Face> const &faces) {
+      auto &f1 = faces[f];
+      auto &f2 = faces[f1.adjFaces[edge]];
+
+      return f2.adjFaces[0] == f ? 0 : (f2.adjFaces[1] == f ? 1 : 2);
    }
 };
-
-//AdjFace AdjFace::fromFace(Face const &f) {
-//   return{ {f.verts[0], f.verts[1], f.verts[2]}, f.pln };
-//}
-
-typedef std::vector<Float3> PointCloud;
-typedef std::list<Face> FaceList;
 
 struct QuickHull {
    PointCloud &points;
-   FaceList faces, emptyFaces;
+   std::vector<Face> faces;
+   FaceList open, closed;
 };
 
-static bool faceAdjOnEdge(Face const &f1, Face const &f2, int v1, int v2) {
-   int matches = 0;
-   for (int i = 0; i < 3; ++i) {
-      if (f1.verts[v1] == f2.verts[i] && ++matches == 2) { return true; }
-      if (f1.verts[v2] == f2.verts[i] && ++matches == 2) { return true; }
-   }
-   return false;
-}
-
-static bool faceAdj(Face const &f1, Face const &f2) {
-   int matches = 0;
-   for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-         if (f1.verts[i] == f2.verts[j] && ++matches == 2) { return true; }
-      }
-   }
-   return false;
-}
+//static bool faceAdjOnEdge(Face const &f1, Face const &f2, int v1, int v2) {
+//   int matches = 0;
+//   for (int i = 0; i < 3; ++i) {
+//      if (f1.verts[v1] == f2.verts[i] && ++matches == 2) { return true; }
+//      if (f1.verts[v2] == f2.verts[i] && ++matches == 2) { return true; }
+//   }
+//   return false;
+//}
+//
+//static bool faceAdj(Face const &f1, Face const &f2) {
+//   int matches = 0;
+//   for (int i = 0; i < 3; ++i) {
+//      for (int j = 0; j < 3; ++j) {
+//         if (f1.verts[i] == f2.verts[j] && ++matches == 2) { return true; }
+//      }
+//   }
+//   return false;
+//}
 
 //adds the first 4 faces
 static void qhInit(QuickHull &qh) {
@@ -124,43 +130,45 @@ static void qhInit(QuickHull &qh) {
       ++i;
    }
 
-   Face f1 = { base.verts[0], base.verts[2], base.verts[1] };
-   Face f2 = { fourth, base.verts[2], base.verts[0] };
-   Face f3 = { fourth, base.verts[1], base.verts[2] };
-   Face f4 = { fourth, base.verts[0], base.verts[1] };
+   qh.faces.insert(qh.faces.end(), {
 
-   f1.buildPlane(qh.points);
-   f2.buildPlane(qh.points);
-   f3.buildPlane(qh.points);
-   f4.buildPlane(qh.points);
+        //0            //1            //2
+      { base.verts[0], base.verts[2], base.verts[1] },//0
+      { fourth,        base.verts[2], base.verts[0] },//1
+      { fourth,        base.verts[1], base.verts[2] },//2
+      { fourth,        base.verts[0], base.verts[1] } });//3
 
-   //f1.adjacency[0] = AdjFace::fromFace(f2);
-   //f2.adjacency[1] = AdjFace::fromFace(f1);
+   for (auto &f : qh.faces) {
+      f.buildPlane(qh.points);
+   }
 
-   //f1.adjacency[1] = AdjFace::fromFace(f3);
-   //f3.adjacency[1] = AdjFace::fromFace(f1);
+   //set starting adjacency manually (setting to indices of other faces)
+   qh.faces[0].adjFaces[Face::Edge0_1] = 1;
+   qh.faces[0].adjFaces[Face::Edge1_2] = 2;
+   qh.faces[0].adjFaces[Face::Edge2_0] = 3;
 
-   //f1.adjacency[2] = AdjFace::fromFace(f4);
-   //f4.adjacency[1] = AdjFace::fromFace(f1);
+   qh.faces[1].adjFaces[Face::Edge0_1] = 2;
+   qh.faces[1].adjFaces[Face::Edge1_2] = 0;
+   qh.faces[1].adjFaces[Face::Edge2_0] = 3;
 
-   //f2.adjacency[0] = AdjFace::fromFace(f3);
-   //f3.adjacency[2] = AdjFace::fromFace(f2);
+   qh.faces[2].adjFaces[Face::Edge0_1] = 3;
+   qh.faces[2].adjFaces[Face::Edge1_2] = 0;
+   qh.faces[2].adjFaces[Face::Edge2_0] = 1;
 
-   //f2.adjacency[2] = AdjFace::fromFace(f4);
-   //f4.adjacency[0] = AdjFace::fromFace(f2);
-
-   //f3.adjacency[0] = AdjFace::fromFace(f4);
-   //f4.adjacency[2] = AdjFace::fromFace(f3);
+   qh.faces[3].adjFaces[Face::Edge0_1] = 1;
+   qh.faces[3].adjFaces[Face::Edge1_2] = 0;
+   qh.faces[3].adjFaces[Face::Edge2_0] = 2;
 
    //push first 4 faces
    FaceList tFaces;
-   tFaces.insert(tFaces.end(), {f1, f2, f3, f4});
+   tFaces.insert(tFaces.end(), {0, 1, 2, 3});
 
    //split all points into face pointlists
    i = 0;
    for (auto &p : qh.points) {
       int fi = 0;
-      for (auto &f : tFaces) {
+      for (auto &fi : tFaces) {
+         auto &f = qh.faces[fi];
          if (!Plane::behind(f.pln, p)) {
             f.points.push_back(i);
             break;
@@ -170,145 +178,168 @@ static void qhInit(QuickHull &qh) {
    }
 
    //move non-empty faces to the face stack
-   for (auto &f : tFaces) {
+   for (auto &fi : tFaces) {
+      auto &f = qh.faces[fi];
       if (!f.points.empty()) {
-         qh.faces.push_back(std::move(f));
+         qh.open.push_back(fi);
       }
       else {
-         qh.emptyFaces.push_back(std::move(f));
+         qh.closed.push_back(fi);
       }
    }
 }
 
 void qhIteration(QuickHull &qh) {
-   Face currentFace = std::move(qh.faces.front());
-   qh.faces.pop_front();
+   int cfIndex = qh.open.front();
+   Face &currentFace = qh.faces[cfIndex];
+   qh.open.pop_front();
 
    //shouldnt happen but, push out an empty face and return
    if (currentFace.points.empty()) {
-      qh.emptyFaces.push_back(std::move(currentFace));
+      qh.closed.push_back(cfIndex);
       return;
    }
 
-   auto &v1 = qh.points[currentFace.verts[0]];
-   auto &v2 = qh.points[currentFace.verts[1]];
-   auto &v3 = qh.points[currentFace.verts[2]];
-
-   //find the furthest point index
+   //find the furthest point index from the current face
    float dist = 0.0f;
    int furthestIndex = -1;
-
 
    for (auto &pi : currentFace.points) {
       auto &p = qh.points[pi];
 
-      float d = fabs(vec::distPoint2FaceWithNormal(p, v1, v2, v3, currentFace.pln.normal));
+      float d = fabs(vec::distPoint2FaceWithNormal(p, 
+         qh.points[currentFace.verts[0]],
+         qh.points[currentFace.verts[1]],
+         qh.points[currentFace.verts[2]],
+         currentFace.pln.normal));
+
       if (d >= dist) {
          dist = d;
          furthestIndex = pi;
       }
    }
-
-   //find all faces the point is in front of
+   
    auto &furthest = qh.points[furthestIndex];
-   std::vector<Face> visibleFaces;
 
-   
+   std::vector<bool> visited(qh.faces.size(), false);
+   FaceList lightFaces, discardedFaces, newFaces;
 
-   //for (auto f = qh.faces.begin(); f != qh.faces.end();) {
-   //   if (!Plane::behind(f->pln, furthest)) {
-   //      visibleFaces.push_back(*f);
+   struct HorizonEdge {
+      int litFace, unlitFace, litEdge;
+   };
 
-   //      if (Plane::behind(f->adjacency[0].pln, furthest)) {
-   //         Face newFace = {};
-   //      }
+   std::vector<HorizonEdge> horizon;
 
-   //      f = qh.faces.erase(f);
-   //   }
-   //   else {
-   //      ++f;
-   //   }
-   //}
+   //now we traverse each adjacent face starting with th current
+   //if the adjacent face is dark we add a horizon edge
+   lightFaces.push_back(cfIndex);
 
+   while (!lightFaces.empty()) {
+      int lfi = lightFaces.front();
+      lightFaces.pop_front();
 
+      auto &lf = qh.faces[lfi];
 
+      for (int edge = 0; edge < 3; ++edge) {
+         int adjFacei = lf.adjFaces[edge];
+         if (!visited[adjFacei]) {
+            auto &adjFace = qh.faces[adjFacei];
 
+            if (adjFace.points.empty()) {
+               return;
+            }
 
-
-
-   for (auto f = qh.faces.begin(); f != qh.faces.end();) {
-      if (faceAdj(*f, currentFace) && !Plane::behind(f->pln, furthest)) {
-         visibleFaces.push_back(*f);
-         f = qh.faces.erase(f);
-      }
-      else {
-         ++f;
-      }
-   }
-
-
-   //create the new faces by remo9viung the closest edge
-   FaceList newFaces;
-
-   if (visibleFaces.empty() && !qh.faces.empty()) {
-      //no visible faces,  pyramid off the base
-      visibleFaces.push_back(currentFace);
-      newFaces.push_back({ currentFace.verts[0], furthestIndex, currentFace.verts[2] });
-      newFaces.push_back({ currentFace.verts[1], furthestIndex, currentFace.verts[0] });
-      newFaces.push_back({ currentFace.verts[2], furthestIndex, currentFace.verts[1] });
-   }
-   else {
-      visibleFaces.push_back(currentFace);
-      for (auto &f : visibleFaces) {
-         auto &v1 = qh.points[f.verts[0]];
-         auto &v2 = qh.points[f.verts[1]];
-         auto &v3 = qh.points[f.verts[2]];
-         float d1 = vec::distPoint2LineSegment(furthest, v1, v2);
-         float d2 = vec::distPoint2LineSegment(furthest, v1, v3);
-         float d3 = vec::distPoint2LineSegment(furthest, v2, v3);
-
-         if (d1 < d2 && d1 < d3) {
-            newFaces.push_back({ f.verts[0], furthestIndex, f.verts[2] });
-            newFaces.push_back({ f.verts[2], furthestIndex, f.verts[1] });
-         }
-         else if (d2 < d1 && d2 < d3) {
-            newFaces.push_back({ f.verts[1], furthestIndex, f.verts[0] });
-            newFaces.push_back({ f.verts[2], furthestIndex, f.verts[1] });
-         }
-         else if (d3 < d1 && d3 < d2) {
-            newFaces.push_back({ f.verts[1], furthestIndex, f.verts[0] });
-            newFaces.push_back({ f.verts[0], furthestIndex, f.verts[2] });
-         }
-      }
-   }
-   
-
-   //calculate normals
-   for (auto &nf : newFaces) {
-      nf.buildPlane(qh.points);
-   }
-
-   //dispense points
-   for (auto &f : visibleFaces) {
-      for (auto &pi : f.points) {
-         for (auto &nf : newFaces) {
-            if (!Plane::behind(nf.pln, qh.points[pi])) {
-               nf.points.push_back(pi);
-               break;
+            if (Plane::behind(adjFace.pln, furthest)) {
+               //horizon edge found
+               horizon.push_back({lfi, adjFacei, edge});
+            }
+            else {
+               //new lightface
+               lightFaces.push_back(adjFacei);
             }
          }
       }
+
+      discardedFaces.push_back(lfi);
+      visited[lfi] = true;
+   }
+   
+   //create the new faces along the horizon
+   for (auto &edge : horizon) {
+      auto &lit = qh.faces[edge.litFace];
+      auto &unlit = qh.faces[edge.unlitFace];
+
+      Face newface;
+
+      switch (edge.litEdge) {         
+      case Face::Edge0_1:
+         newface.verts[0] = lit.verts[1];
+         newface.verts[1] = furthestIndex;
+         newface.verts[2] = lit.verts[0];
+         break;
+
+      case Face::Edge1_2:
+         newface.verts[0] = lit.verts[2];
+         newface.verts[1] = furthestIndex;
+         newface.verts[2] = lit.verts[1];
+         break;
+
+      case Face::Edge2_0:
+         newface.verts[0] = lit.verts[0];
+         newface.verts[1] = furthestIndex;
+         newface.verts[2] = lit.verts[2];
+         break;
+      }
+
+      newface.buildPlane(qh.points);
+
+      int newIndex = qh.faces.size();
+      newface.adjFaces[Face::Edge2_0] = edge.unlitFace;
+      unlit.adjFaces[Face::oppositeEdgeIndex(edge.litFace, edge.litEdge, qh.faces)] = newIndex;
+      newFaces.push_back(newIndex);  
+      
+      qh.faces.push_back(std::move(newface));
    }
 
-   //move non-empty faces to the face stack
+   //link the new faces adjacency
+   int faceCount = qh.faces.size();
+   int start = faceCount - newFaces.size();
+   for (int i = start; i < faceCount; ++i) {
+      qh.faces[i].adjFaces[Face::Edge0_1] = i + 1 < faceCount ? i + 1 : start;
+      qh.faces[i].adjFaces[Face::Edge1_2] = i > start ? i - 1 : faceCount - 1;
+   }
+
+   for (auto &i : discardedFaces) {
+      for (auto &pi : qh.faces[i].points) {
+         for (auto &nfi : newFaces) {
+            auto &nf = qh.faces[nfi];
+            if (!Plane::behind(nf.pln, qh.points[pi])) {
+               nf.points.push_back(pi);
+            }
+         }
+      }
+
+      qh.faces[i].points.clear();
+   }
+
    for (auto &f : newFaces) {
-      if (!f.points.empty()) {
-         qh.faces.push_back(std::move(f));
+      if (!qh.faces[f].points.empty()) {
+         qh.open.push_back(f);
       }
       else {
-         qh.emptyFaces.push_back(std::move(f));
+         qh.closed.push_back(f);
       }
    }
+
+   for (auto iter = qh.open.begin(); iter != qh.open.end();) {
+      if (qh.faces[*iter].points.empty()) {
+         iter = qh.open.erase(iter);
+      }
+      else {
+         ++iter;
+      }
+   }
+
 }
 
 QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
@@ -317,7 +348,7 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
    qhInit(qh);
 
-   while (iterCount-- && !qh.faces.empty()) {
+   while (iterCount-- && !qh.open.empty()) {
       qhIteration(qh);
    }
 
@@ -328,15 +359,17 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
    std::vector<FVF_Pos3_Col4> faceLines;
    std::vector<FVF_Pos3_Col4> pointLines;
+   ModelVertices polys;
 
-   ColorRGBAf colors[8] = { CommonColors::Red , CommonColors::DkRed , CommonColors::DkGreen, 
-      CommonColors::Blue , CommonColors::DkBlue , CommonColors::Cyan , CommonColors::Yellow , CommonColors::Magenta };
+   ColorRGBAf colors[5] = { CommonColors::Red, 
+      CommonColors::Blue , CommonColors::Cyan , CommonColors::Yellow , CommonColors::Magenta };
 
 
    int fi = 0;
-   for (auto &f : qh.faces) {
+   for (auto &fi : qh.open) {
+      auto &f = qh.faces[fi];
 
-      ColorRGBAf color = colors[rand()%8];
+      ColorRGBAf color = colors[rand()%5];
 
       faceLines.insert(faceLines.end(), {
          { qh.points[f.verts[0]], CommonColors::White },
@@ -347,10 +380,22 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
          { qh.points[f.verts[0]], CommonColors::White }
       });
 
+      int vCount = polys.positions.size();
+
+      polys.positions.insert(polys.positions.end(), {
+         qh.points[f.verts[0]],
+         qh.points[f.verts[1]],
+         qh.points[f.verts[2]]});
+
+      polys.positionIndices.insert(polys.positionIndices.end(), {
+         vCount + 0, vCount + 1,vCount + 2
+      });
+
+
       auto c = vec::centroid(points[f.verts[0]], points[f.verts[1]], points[f.verts[2]]);
       faceLines.insert(faceLines.end(), {
          { c, color },
-         { vec::add(c, vec::mul(f.pln.normal, 0.05f)), color }
+         { vec::add(c, vec::mul(f.pln.normal, 0.02f)), color }
       });
 
       for (auto &p : f.points) {
@@ -362,7 +407,8 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
 
    fi = 0;
-   for (auto &f : qh.emptyFaces) {
+   for (auto &fi : qh.closed) {
+      auto &f = qh.faces[fi];
 
       faceLines.insert(faceLines.end(), {
          { qh.points[f.verts[0]], CommonColors::Green },
@@ -372,7 +418,6 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
          { qh.points[f.verts[2]], CommonColors::Green },
          { qh.points[f.verts[0]], CommonColors::Green }
       });
-
       //auto c = vec::centroid(points[f.vertices[0]], points[f.vertices[1]], points[f.vertices[2]]);
       //faceLines.insert(faceLines.end(), {
       //   { c, CommonColors::Red },
@@ -384,6 +429,10 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
    out.lineModels.push_back(ModelManager::create(faceLines));
    out.pointModels.push_back(ModelManager::create(pointLines));
+
+
+   auto poly = polys.calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
+   out.polyModels.push_back(poly);
 
    return out;
 }

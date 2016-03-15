@@ -356,7 +356,7 @@ public:
             break;
          case Keys::Key_KeypadSubtract:
             if (ke->action == KeyActions::Key_Pressed && qhIterCount > 0) {
-               qhIterCount++;
+               qhIterCount--;
                buildBunnyModel();
             }
             break;
@@ -481,6 +481,18 @@ public:
       for (auto m : m_bunnyModel.hullModels.pointModels) {
          r.renderModel(m, ModelManager::Points);
       }
+
+
+      r.setShader(Shaders::Bunny);
+      r.setMatrix(uModel, m_bunny.modelMatrix);
+      r.setMatrix(uModelRotation, m_bunny.rotation);
+      r.setColor(uColor, CommonColors::White);
+
+      for (auto m : m_bunnyModel.hullModels.polyModels) {
+         r.renderModel(m);
+      }
+
+
       //
       //r.enableDepth(true);
 
