@@ -137,12 +137,13 @@ public:
    }
 
    void render(ModelManager::RenderType type) {
-      static GLuint map[2];
+      static GLuint map[3];
       static bool mapInit = false;
       if (!mapInit) {
          mapInit = true;
          map[ModelManager::Triangles] = GL_TRIANGLES;
          map[ModelManager::Lines] = GL_LINES;
+         map[ModelManager::Points] = GL_POINTS;
       }
 
       glDrawArrays(map[type], 0, m_vertexCount);

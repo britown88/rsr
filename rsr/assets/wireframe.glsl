@@ -15,6 +15,10 @@ layout(std140, binding = 0) uniform uboView{
    uniform mat4 uModelMatrix;
    uniform vec4 uColorTransform;
 
+   #ifdef ROTATION
+   uniform mat4 uModelRotation;
+   #endif
+
    in vec2 aPosition2;
    in vec3 aPosition3;
 
@@ -30,6 +34,11 @@ layout(std140, binding = 0) uniform uboView{
 	  vec4 position = vec4(aPosition3, 1);
       #endif      
 
-      gl_Position = uViewMatrix * (uModelMatrix * position);;
+	  mat4 model = uModelMatrix;	  
+	  #ifdef ROTATION
+	  model *= uModelRotation;
+	  #endif
+
+      gl_Position = uViewMatrix * (model * position);;
    }
 #endif

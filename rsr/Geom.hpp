@@ -17,6 +17,9 @@ struct Vec2 {
 template<typename T>
 struct Vec3 {
    T x, y, z;
+   bool operator==(Vec3<T> const &rhs) {
+      return x == rhs.x && y == rhs.y && z == rhs.z;
+   }
 };
 
 typedef Vec2<int> Int2;
@@ -46,8 +49,9 @@ struct Spherical {
 };
 
 struct Plane {
-   Float3 pos, normal;
-   bool behind(Plane const &p, Float3 const &point);
+   Float3 orig, normal;
+   static bool behind(Plane const &p, Float3 const &point);
+   static Plane fromFace(Float3 const &v1, Float3 const &v2, Float3 const &v3);
 };
 
 struct ConvexHull {
@@ -56,6 +60,17 @@ struct ConvexHull {
 };
 
 std::vector<Float3> quickHull(std::vector<Float3> &pointCloud);
+
+class Model;
+struct QuickHullTestModels {
+   //
+   std::vector<Model*> lineModels;
+   std::vector<Model*> pointModels;
+   std::vector<Model*> polyModels;
+
+};
+
+QuickHullTestModels quickHullTest(std::vector<Float3> &pointCloud, int iterCount);
 
 namespace vec
 {
@@ -106,6 +121,8 @@ namespace vec
    float len(Float3 const &v);
 
    Float3 faceNormal(Float3 const &v1, Float3 const &v2, Float3 const &v3);
+
+   Float3 centroid(Float3 const &v1, Float3 const &v2, Float3 const &v3);
 
    float distPoint2Line(Float3 const &p, Float3 const &v1, Float3 const &v2);
    float distPoint2LineSegment(Float3 const &p, Float3 const &v1, Float3 const &v2);

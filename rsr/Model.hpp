@@ -127,7 +127,8 @@ public:
 
    enum RenderType {
       Triangles,
-      Lines
+      Lines,
+      Points
    };
 
 private:

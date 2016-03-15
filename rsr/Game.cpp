@@ -8,6 +8,7 @@
 namespace Shaders {
    static Shader *Skybox = nullptr;
    static Shader *Wireframe = nullptr;
+   static Shader *RWireframe = nullptr;
    static Shader *Lines = nullptr;
    static Shader *RLines = nullptr;
    static Shader *Bunny = nullptr;
@@ -16,6 +17,7 @@ namespace Shaders {
    static void build() {
       Skybox = ShaderManager::create("assets/skybox.glsl");
       Wireframe = ShaderManager::create("assets/wireframe.glsl");
+      RWireframe = ShaderManager::create("assets/wireframe.glsl", Rotation);
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
@@ -25,7 +27,8 @@ namespace Shaders {
 
 struct BunnyModel {
    ModelVertices vertices;
-   Model *renderModel, *hullModel;
+   Model *renderModel;
+   QuickHullTestModels hullModels;
 };
 
 struct Bunny {
@@ -158,6 +161,8 @@ struct Bunny {
       updateThrottle();
       updateTurnAngle();
 
+      //up = Quaternion::fromAxisAngle(forward, 1.0f).rotate(up);
+
       updatePosition();
       updateDebugLines();
       updateMatrix();
@@ -200,6 +205,8 @@ class Game::Impl {
    BunnyModel m_bunnyModel;
    Bunny m_bunny;
 
+   int qhIterCount = 0;
+
    void buildBunnyModel() {
 
       auto vertexSet = ModelVertices::fromOBJ("assets/bunny.obj");
@@ -220,10 +227,7 @@ class Game::Impl {
             //}
          }
 
-         ModelVertices qh;
-         qh.positions = quickHull(vs.positions);
-
-         m_bunnyModel.hullModel = qh.createModel();
+         m_bunnyModel.hullModels = quickHullTest(vs.positions, qhIterCount);
 
 
          m_bunnyModel.vertices = vs.calculateNormals();
@@ -342,7 +346,22 @@ public:
          case Keys::Key_Escape:
             m_window->close();
             break;
+         case Keys::Key_KeypadAdd:
+            if (ke->action == KeyActions::Key_Pressed) {
+               
+               qhIterCount++;
+               buildBunnyModel();
+            }
+            
+            break;
+         case Keys::Key_KeypadSubtract:
+            if (ke->action == KeyActions::Key_Pressed && qhIterCount > 0) {
+               qhIterCount++;
+               buildBunnyModel();
+            }
+            break;
          }
+         
       }
 
       m_bunny.control.left = k->isDown(Keys::Key_A);
@@ -400,9 +419,7 @@ public:
 
 
       r.viewport({ 0, 0, (int)r.getWidth(), (int)r.getHeight() });
-      r.clear({ 0.0f, 0.0f, 0.0f, 1.0f });
-
-      
+      r.clear(CommonColors::Black);
 
       TestUBO cameraUbo;
       cameraUbo.c = m_camera.cam;
@@ -414,7 +431,7 @@ public:
       r.setShader(Shaders::Skybox);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
-      r.renderModel(m_skybox);
+      //r.renderModel(m_skybox);
 
       r.enableDepth(true);
 
@@ -436,36 +453,48 @@ public:
       r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setMatrix(uModelRotation, m_bunny.rotation);
       r.setColor(uColor, m_bunny.color);
-      r.renderModel(m_bunnyModel.renderModel);
+      //r.renderModel(m_bunnyModel.renderModel);
 
       r.setShader(Shaders::Lines);
 
       r.setMatrix(uModel, m_bunny.debugLinesMatrix);
       r.setColor(uColor, CommonColors::White);
-      r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
+      //r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
 
 
       r.setShader(Shaders::Track);
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::DkGray);
-      r.renderModel(m_testTrack);
+      //r.renderModel(m_testTrack);
+
+      //r.enableDepth(false);
 
       r.setShader(Shaders::RLines);
       r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setMatrix(uModelRotation, m_bunny.rotation);
       r.setColor(uColor, CommonColors::White);
-      r.enableDepth(false);
-      r.renderModel(m_bunnyModel.hullModel, ModelManager::Lines);
-      r.enableDepth(true);
+      
+      for (auto m : m_bunnyModel.hullModels.lineModels) {
+         r.renderModel(m, ModelManager::Lines);
+      }
+
+      for (auto m : m_bunnyModel.hullModels.pointModels) {
+         r.renderModel(m, ModelManager::Points);
+      }
+      //
+      //r.enableDepth(true);
 
       //wireframes
       //r.enableWireframe(true);
-      //r.setShader(m_wireframeShader);
+      //r.setShader(Shaders::RWireframe);
       //r.setColor(uColor, CommonColors::Cyan);
 
       //r.setMatrix(uModel, m_bunny.modelMatrix);
+      //r.setMatrix(uModelRotation, m_bunny.rotation);
       //r.renderModel(m_bunnyModel.renderModel);
 
+      //r.setShader(Shaders::Wireframe);
+      //r.setColor(uColor, CommonColors::Cyan);
       //r.setMatrix(uModel, Matrix::identity());
       //r.renderModel(m_testTrack);
 

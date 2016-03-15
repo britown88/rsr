@@ -364,7 +364,19 @@ float cinterp(float y0, float y1, float y2, float y3, float mu) {
 }
 
 bool Plane::behind(Plane const &p, Float3 const &point) {
-   return vec::dot(vec::sub(p.pos, point), p.normal) <= 0;
+   return vec::dot(vec::normal(vec::sub(point, p.orig)), p.normal) < 0;
+}
+
+Plane Plane::fromFace(Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   return {v1, vec::faceNormal(v1, v2, v3)};
+}
+
+Float3 vec::centroid(Float3 const &v1, Float3 const &v2, Float3 const &v3) {
+   return {
+      (v1.x + v2.x + v3.x) / 3.0f,
+      (v1.y + v2.y + v3.y) / 3.0f,
+      (v1.z + v2.z + v3.z) / 3.0f
+   };
 }
 
 Float3 vec::cross(Float3 const &v1, Float3 const &v2) {
@@ -409,7 +421,7 @@ float vec::distPoint2LineSegment(Float3 const &p, Float3 const &v1, Float3 const
    return len(vo);
 }
 float vec::distPoint2Plane(Float3 const &pt, Plane const &pl) {
-   auto projected = projectPoint2Plane(pt, pl.pos, pl.normal);
+   auto projected = projectPoint2Plane(pt, pl.orig, pl.normal);
    return len(sub(pt, projected));
 }
 
