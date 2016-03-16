@@ -40,6 +40,9 @@ struct QuickHull {
    PointCloud &points;
    std::vector<Face> faces;
    FaceList open, closed;
+
+   PointCloud horizon;
+   Float3 summit;
 };
 
 //static bool faceAdjOnEdge(Face const &f1, Face const &f2, int v1, int v2) {
@@ -225,49 +228,106 @@ void qhIteration(QuickHull &qh) {
    FaceList lightFaces, discardedFaces, newFaces;
 
    struct HorizonEdge {
-      int litFace, unlitFace, litEdge;
+      int litFace, litEdge;
    };
 
    std::vector<HorizonEdge> horizon;
 
    //now we traverse each adjacent face starting with th current
    //if the adjacent face is dark we add a horizon edge
-   lightFaces.push_back(cfIndex);
 
-   while (!lightFaces.empty()) {
-      int lfi = lightFaces.front();
-      lightFaces.pop_front();
+   struct OpenFace { int index, edge, edgeCount; int fromIndex, fromEdge; };
+   std::list<OpenFace> openFaces;
 
-      auto &lf = qh.faces[lfi];
+   openFaces.push_back({ cfIndex, 0, 0 });
+   while (!openFaces.empty()) {
+      auto &of = openFaces.back();
+      visited[of.index] = true;
 
-      for (int edge = 0; edge < 3; ++edge) {
-         int adjFacei = lf.adjFaces[edge];
-         if (!visited[adjFacei]) {
-            auto &adjFace = qh.faces[adjFacei];
+      if (Plane::behind(qh.faces[of.index].pln, furthest)) {
+         //point not visible, make our edge
+         horizon.push_back({of.fromIndex, of.fromEdge});
+         openFaces.pop_back();
+      }
+      else if (of.edgeCount == 3) {         
+         discardedFaces.push_back(of.index);
+         openFaces.pop_back();
+      }
+      else {
+         while (of.edgeCount < 3) {
+            int adj = qh.faces[of.index].adjFaces[of.edge];
 
-            if (adjFace.points.empty()) {
-               return;
+            if (visited[adj]) {//skip visited
+               of.edge = (of.edge + 1) % 3;//+ 3 - 1 cpp modulo negative grr
+               ++of.edgeCount;
+               continue;
             }
 
-            if (Plane::behind(adjFace.pln, furthest)) {
-               //horizon edge found
-               horizon.push_back({lfi, adjFacei, edge});
-            }
-            else {
-               //new lightface
-               lightFaces.push_back(adjFacei);
-            }
+            openFaces.push_back({ adj, Face::oppositeEdgeIndex(of.index, of.edge, qh.faces), 0, of.index, of.edge });
+            of.edge = (of.edge + 1) % 3;//+ 3 - 1 cpp modulo negative grr
+            ++of.edgeCount;
+            break;
          }
       }
 
-      discardedFaces.push_back(lfi);
-      visited[lfi] = true;
+      
    }
+   
+
+
+
+   //int lightIndex = cfIndex;
+   //int startEdge = 0;
+   //int nextStart;
+
+   //while (true) {
+   //   int startIndex = lightIndex;
+   //   auto &lf = qh.faces[lightIndex];
+   //   int next = -1;
+   //   
+   //   for (int e = 0; e < 3; ++e) {
+   //      int edge = (startEdge + e) % 3;
+   //      int adjFacei = lf.adjFaces[edge];
+   //      auto &adjFace = qh.faces[adjFacei];
+
+   //      if (!visited[adjFacei]) {
+
+   //         if (Plane::behind(adjFace.pln, furthest)) {
+   //            //horizon edge found
+   //            horizon.push_back({ lightIndex, edge });
+
+   //            //if (adjFace.adjFaces[Face::oppositeEdgeIndex(lightIndex, edge, qh.faces)] != lightIndex) {
+   //            //   return;//PICNIC
+   //            //}
+   //         }
+   //         else if(next < 0){
+   //            //new lightface                             
+   //            next = adjFacei;
+   //            nextStart = edge;
+   //         }
+   //      }
+   //   }
+
+   //   discardedFaces.push_back(lightIndex);
+
+   //   if (next > -1) {
+   //      visited[lightIndex] = true;
+   //      lightIndex = next;
+   //      startEdge = nextStart;
+   //   }
+   //   else {
+   //      break;
+   //   }
+   //}
+
+   qh.horizon.clear();
+   qh.summit = furthest;
    
    //create the new faces along the horizon
    for (auto &edge : horizon) {
       auto &lit = qh.faces[edge.litFace];
-      auto &unlit = qh.faces[edge.unlitFace];
+      int unliti = lit.adjFaces[edge.litEdge];
+      auto &unlit = qh.faces[unliti];
 
       Face newface;
 
@@ -291,10 +351,13 @@ void qhIteration(QuickHull &qh) {
          break;
       }
 
+      qh.horizon.push_back(qh.points[newface.verts[0]]);
+      qh.horizon.push_back(qh.points[newface.verts[2]]);
+
       newface.buildPlane(qh.points);
 
       int newIndex = qh.faces.size();
-      newface.adjFaces[Face::Edge2_0] = edge.unlitFace;
+      newface.adjFaces[Face::Edge2_0] = unliti;
       unlit.adjFaces[Face::oppositeEdgeIndex(edge.litFace, edge.litEdge, qh.faces)] = newIndex;
       newFaces.push_back(newIndex);  
       
@@ -305,8 +368,8 @@ void qhIteration(QuickHull &qh) {
    int faceCount = qh.faces.size();
    int start = faceCount - newFaces.size();
    for (int i = start; i < faceCount; ++i) {
-      qh.faces[i].adjFaces[Face::Edge0_1] = i + 1 < faceCount ? i + 1 : start;
-      qh.faces[i].adjFaces[Face::Edge1_2] = i > start ? i - 1 : faceCount - 1;
+      qh.faces[i].adjFaces[Face::Edge0_1] = (i + 1 < faceCount) ? i + 1 : start;
+      qh.faces[i].adjFaces[Face::Edge1_2] = (i > start) ? i - 1 : faceCount - 1;
    }
 
    for (auto &i : discardedFaces) {
@@ -364,23 +427,32 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
    ColorRGBAf colors[5] = { CommonColors::Red, 
       CommonColors::Blue , CommonColors::Cyan , CommonColors::Yellow , CommonColors::Magenta };
 
-
-   int fi = 0;
+   
    for (auto &fi : qh.open) {
       auto &f = qh.faces[fi];
 
-      ColorRGBAf color = colors[rand()%5];
+      ColorRGBAf color = CommonColors::Red;
+      ColorRGBAf lineColor = CommonColors::Black;
 
       faceLines.insert(faceLines.end(), {
-         { qh.points[f.verts[0]], CommonColors::White },
-         { qh.points[f.verts[1]], CommonColors::White },
-         { qh.points[f.verts[1]], CommonColors::White },
-         { qh.points[f.verts[2]], CommonColors::White },
-         { qh.points[f.verts[2]], CommonColors::White },
-         { qh.points[f.verts[0]], CommonColors::White }
+         { qh.points[f.verts[0]], lineColor },
+         { qh.points[f.verts[1]], lineColor },
+         { qh.points[f.verts[1]], lineColor },
+         { qh.points[f.verts[2]], lineColor },
+         { qh.points[f.verts[2]], lineColor },
+         { qh.points[f.verts[0]], lineColor }
       });
 
       int vCount = polys.positions.size();
+
+      float colorFactor = (fi / (float)qh.faces.size());
+      ColorRGBAf faceColor = { 0.0f, 0.0f, colorFactor, 1.0f };
+
+      polys.colors.insert(polys.colors.end(), {
+         faceColor,
+         faceColor,
+         faceColor });
+
 
       polys.positions.insert(polys.positions.end(), {
          qh.points[f.verts[0]],
@@ -398,6 +470,18 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
          { vec::add(c, vec::mul(f.pln.normal, 0.02f)), color }
       });
 
+      for (int i = 0; i < 3; ++i) {
+         auto &adj = qh.faces[f.adjFaces[i]];
+         auto c2 = vec::centroid(points[adj.verts[0]], points[adj.verts[1]], points[adj.verts[2]]);
+
+
+
+         faceLines.insert(faceLines.end(), {
+            { vec::add(c, vec::mul(f.pln.normal, 0.02f)), CommonColors::Yellow },
+            { vec::add(c2, vec::mul(adj.pln.normal, 0.01f)), CommonColors::Yellow }
+         });
+      }
+
       for (auto &p : f.points) {
          pointLines.push_back({ points[p],  color });
       }
@@ -405,8 +489,29 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
       ++fi;
    }
 
+   if (!qh.horizon.empty()) {
 
-   fi = 0;
+      static float ptSize = 0.01f;
+      
+      faceLines.insert(faceLines.end(), {
+         { { qh.summit.x, qh.summit.y - ptSize, qh.summit.z }, CommonColors::Green },
+         { { qh.summit.x, qh.summit.y + ptSize, qh.summit.z }, CommonColors::Green },
+
+         { { qh.summit.x, qh.summit.y, qh.summit.z - ptSize }, CommonColors::Green },
+         { { qh.summit.x, qh.summit.y, qh.summit.z + ptSize }, CommonColors::Green },
+
+         { { qh.summit.x - ptSize, qh.summit.y, qh.summit.z }, CommonColors::Green },
+         { { qh.summit.x + ptSize, qh.summit.y, qh.summit.z }, CommonColors::Green },
+      });
+
+      //render horizon
+      for(auto &p : qh.horizon){
+         faceLines.push_back({ p, CommonColors::Green });
+      }
+      
+   }
+
+
    for (auto &fi : qh.closed) {
       auto &f = qh.faces[fi];
 

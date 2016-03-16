@@ -12,6 +12,7 @@ namespace Shaders {
    static Shader *Lines = nullptr;
    static Shader *RLines = nullptr;
    static Shader *Bunny = nullptr;
+   static Shader *Shell = nullptr;
    static Shader *Track = nullptr;
 
    static void build() {
@@ -21,6 +22,7 @@ namespace Shaders {
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
+      Shell = ShaderManager::create("assets/shaders.glsl",  ColorAttribute | Rotation);
       Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
    }
 }
@@ -479,11 +481,11 @@ public:
       }
 
       for (auto m : m_bunnyModel.hullModels.pointModels) {
-         r.renderModel(m, ModelManager::Points);
+         //r.renderModel(m, ModelManager::Points);
       }
 
 
-      r.setShader(Shaders::Bunny);
+      r.setShader(Shaders::Shell);
       r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setMatrix(uModelRotation, m_bunny.rotation);
       r.setColor(uColor, CommonColors::White);
