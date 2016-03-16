@@ -364,7 +364,7 @@ float cinterp(float y0, float y1, float y2, float y3, float mu) {
 }
 
 bool Plane::behind(Plane const &p, Float3 const &point) {
-   return vec::dot(vec::normal(vec::sub(point, p.orig)), p.normal) < 0;
+   return vec::dot(vec::normal(vec::sub(point, p.orig)), p.normal) < 0.001f;
 }
 
 Plane Plane::fromFace(Float3 const &v1, Float3 const &v2, Float3 const &v3) {

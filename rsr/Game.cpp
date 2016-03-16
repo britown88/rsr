@@ -22,7 +22,7 @@ namespace Shaders {
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
-      Shell = ShaderManager::create("assets/shaders.glsl",  ColorAttribute | Rotation);
+      Shell = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
    }
 }
@@ -207,7 +207,7 @@ class Game::Impl {
    BunnyModel m_bunnyModel;
    Bunny m_bunny;
 
-   int qhIterCount = 0;
+   int qhIterCount = 14;
 
    void buildBunnyModel() {
 
@@ -351,7 +351,7 @@ public:
          case Keys::Key_KeypadAdd:
             if (ke->action == KeyActions::Key_Pressed) {
                
-               qhIterCount++;
+               qhIterCount += 1;
                buildBunnyModel();
             }
             
@@ -379,7 +379,7 @@ public:
          switch (me->action) {
 
          case MouseActions::Mouse_Scrolled:
-            m_camera.distance += -me->pos.y * 0.05f;
+            m_camera.distance += -me->pos.y * 0.01f;
             m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance));
             //m_axisScale = m_camera.distance / 10.0f;
             break;
@@ -433,14 +433,14 @@ public:
       r.setShader(Shaders::Skybox);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
-      //r.renderModel(m_skybox);
+      r.renderModel(m_skybox);
 
       r.enableDepth(true);
 
       m_u.c = m_camera.cam;
       Matrix lookAt = Matrix::lookAt(m_u.c.eye, m_u.c.center, m_u.c.up);
       m_u.view = m_u.c.perspective * lookAt;
-      m_u.light = { 0.0f, -1.0f, 0.0f };
+      m_u.light = vec::normal({ 0.0f, -1.0f, 0.25f });
       m_u.ambient = 0.1f;
 
       r.setUBOData(m_testUBO, m_u);
@@ -451,17 +451,21 @@ public:
       r.setColor(uColor, CommonColors::White);
       r.renderModel(m_axisLines, ModelManager::Lines);
 
+
+      auto c = m_bunny.color;
+      c.a = 0.5f;
+
       r.setShader(Shaders::Bunny);
       r.setMatrix(uModel, m_bunny.modelMatrix);
       r.setMatrix(uModelRotation, m_bunny.rotation);
-      r.setColor(uColor, m_bunny.color);
-      //r.renderModel(m_bunnyModel.renderModel);
+      r.setColor(uColor, c);
+      r.renderModel(m_bunnyModel.renderModel);
 
       r.setShader(Shaders::Lines);
 
       r.setMatrix(uModel, m_bunny.debugLinesMatrix);
       r.setColor(uColor, CommonColors::White);
-      //r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
+      r.renderModel(m_bunny.debugLinesModel, ModelManager::Lines);
 
 
       r.setShader(Shaders::Track);
@@ -491,7 +495,7 @@ public:
       r.setColor(uColor, CommonColors::White);
 
       for (auto m : m_bunnyModel.hullModels.polyModels) {
-         r.renderModel(m);
+        r.renderModel(m);
       }
 
 

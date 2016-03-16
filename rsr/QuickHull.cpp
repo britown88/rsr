@@ -7,20 +7,11 @@ typedef std::vector<Float3> PointCloud;
 typedef std::list<int> FaceList;
 
 struct Face {
-   int verts[3];
+   std::vector<int> verts;
+   std::vector<int> adjFaces;
+
    Plane pln;
    std::vector<int> points;
-   
-   //edges
-   enum {
-      Edge0_1,
-      Edge1_2,
-      Edge2_0
-   };
-
-   //indices into qh face vector (3 edges)
-   int adjFaces[3];
-   
 
    void buildPlane(std::vector<Float3> &pts) {
       pln = Plane::fromFace(pts[verts[0]], pts[verts[1]], pts[verts[2]]);
@@ -32,7 +23,75 @@ struct Face {
       auto &f1 = faces[f];
       auto &f2 = faces[f1.adjFaces[edge]];
 
-      return f2.adjFaces[0] == f ? 0 : (f2.adjFaces[1] == f ? 1 : 2);
+      int e = 0;
+      for (auto face : f2.adjFaces) {
+         if (face == f) {
+            return e;
+         }
+         ++e;
+      }
+
+      return -1;
+   }
+
+   static int clampedEdge(Face const &f, int edge) {
+      int eCount = f.adjFaces.size();
+      while (edge < 0) {
+         edge += eCount;
+      }
+      return edge % eCount;
+   }
+
+   static void getEdgeVertices(Face const &f, int edge, int &v1, int &v2) {
+
+      v1 = f.verts[edge];
+      v2 = f.verts[clampedEdge(f, edge + 1)];
+   }
+
+   static bool coPlanar(Face const &f1, Face const &f2) {
+      return vec::dot(f1.pln.normal, f2.pln.normal) > 0.999f;
+   }
+
+   static int merge(int f1i, int f2i, int edge, std::vector<Face> &faces) {
+      auto &f1 = faces[f1i];
+      auto &f2 = faces[f2i];
+
+      Face newFace = f1;
+      int newIndex = faces.size();
+
+      int oppositeEdge = oppositeEdgeIndex(f1i, edge, faces);
+
+      for (int i = 0; i < f2.verts.size() - 2; ++i) {
+         int e1 = clampedEdge(f1, edge + i + 1);
+         int e2 = clampedEdge(f2, oppositeEdge + i + 2);
+
+         int changedEdge = clampedEdge(f2, e2 - 1);
+         int ceai1 = f2.adjFaces[changedEdge];//changed edge adjacent index
+         int ceai2 = f2.adjFaces[e2];//changed edge adjacent index
+
+         //update the two changed edges to point to the new face
+         faces[ceai1].adjFaces[oppositeEdgeIndex(f2i, changedEdge, faces)] = newIndex;
+         faces[ceai2].adjFaces[oppositeEdgeIndex(f2i, e2, faces)] = newIndex;
+
+
+         newFace.verts.insert(newFace.verts.begin() + e1, f2.verts[e2]);
+
+         //e1 - 1  = changedegde
+         //insert e2
+         newFace.adjFaces[clampedEdge(newFace, e1 - 1)] = f2.adjFaces[changedEdge];
+         newFace.adjFaces.insert(newFace.adjFaces.begin() + e1, f2.adjFaces[e2]);
+         
+      }
+
+      for (int i = 0; i < f1.verts.size() - 1; ++i) {
+         int e = clampedEdge(f1, edge - i - 1);
+         int adji = f1.adjFaces[e];
+
+         faces[adji].adjFaces[oppositeEdgeIndex(f1i, e, faces)] = newIndex;
+      }
+
+      faces.push_back(newFace);
+      return newIndex;
    }
 };
 
@@ -43,26 +102,8 @@ struct QuickHull {
 
    PointCloud horizon;
    Float3 summit;
+   FaceList coplanars;
 };
-
-//static bool faceAdjOnEdge(Face const &f1, Face const &f2, int v1, int v2) {
-//   int matches = 0;
-//   for (int i = 0; i < 3; ++i) {
-//      if (f1.verts[v1] == f2.verts[i] && ++matches == 2) { return true; }
-//      if (f1.verts[v2] == f2.verts[i] && ++matches == 2) { return true; }
-//   }
-//   return false;
-//}
-//
-//static bool faceAdj(Face const &f1, Face const &f2) {
-//   int matches = 0;
-//   for (int i = 0; i < 3; ++i) {
-//      for (int j = 0; j < 3; ++j) {
-//         if (f1.verts[i] == f2.verts[j] && ++matches == 2) { return true; }
-//      }
-//   }
-//   return false;
-//}
 
 //adds the first 4 faces
 static void qhInit(QuickHull &qh) {
@@ -85,6 +126,7 @@ static void qhInit(QuickHull &qh) {
    //find two EP's with maximum dist for base line
    float dist = 0.0f;
    Face base;
+   base.verts.resize(3);
    for (int i = 0; i < 6; ++i) {
       Float3 &p1 = qh.points[EP[i]];
       for (int j = 0; j < 6; ++j) {
@@ -136,31 +178,20 @@ static void qhInit(QuickHull &qh) {
    qh.faces.insert(qh.faces.end(), {
 
         //0            //1            //2
-      { base.verts[0], base.verts[2], base.verts[1] },//0
-      { fourth,        base.verts[2], base.verts[0] },//1
-      { fourth,        base.verts[1], base.verts[2] },//2
-      { fourth,        base.verts[0], base.verts[1] } });//3
+      { {base.verts[0], base.verts[2], base.verts[1]} },//0
+      { {fourth,        base.verts[2], base.verts[0]} },//1
+      { {fourth,        base.verts[1], base.verts[2]} },//2
+      { {fourth,        base.verts[0], base.verts[1]} } });//3
 
    for (auto &f : qh.faces) {
       f.buildPlane(qh.points);
    }
 
    //set starting adjacency manually (setting to indices of other faces)
-   qh.faces[0].adjFaces[Face::Edge0_1] = 1;
-   qh.faces[0].adjFaces[Face::Edge1_2] = 2;
-   qh.faces[0].adjFaces[Face::Edge2_0] = 3;
-
-   qh.faces[1].adjFaces[Face::Edge0_1] = 2;
-   qh.faces[1].adjFaces[Face::Edge1_2] = 0;
-   qh.faces[1].adjFaces[Face::Edge2_0] = 3;
-
-   qh.faces[2].adjFaces[Face::Edge0_1] = 3;
-   qh.faces[2].adjFaces[Face::Edge1_2] = 0;
-   qh.faces[2].adjFaces[Face::Edge2_0] = 1;
-
-   qh.faces[3].adjFaces[Face::Edge0_1] = 1;
-   qh.faces[3].adjFaces[Face::Edge1_2] = 0;
-   qh.faces[3].adjFaces[Face::Edge2_0] = 2;
+   qh.faces[0].adjFaces.insert(qh.faces[0].adjFaces.end(), { 1, 2, 3 });
+   qh.faces[1].adjFaces.insert(qh.faces[1].adjFaces.end(), { 2, 0, 3 });
+   qh.faces[2].adjFaces.insert(qh.faces[2].adjFaces.end(), { 3, 0, 1 });
+   qh.faces[3].adjFaces.insert(qh.faces[3].adjFaces.end(), { 1, 0, 2 });
 
    //push first 4 faces
    FaceList tFaces;
@@ -242,6 +273,8 @@ void qhIteration(QuickHull &qh) {
    openFaces.push_back({ cfIndex, 0, 0 });
    while (!openFaces.empty()) {
       auto &of = openFaces.back();
+      auto &ofFace = qh.faces[of.index];
+      int ofEdgeCount = ofFace.adjFaces.size();
       visited[of.index] = true;
 
       if (Plane::behind(qh.faces[of.index].pln, furthest)) {
@@ -249,22 +282,22 @@ void qhIteration(QuickHull &qh) {
          horizon.push_back({of.fromIndex, of.fromEdge});
          openFaces.pop_back();
       }
-      else if (of.edgeCount == 3) {         
+      else if (of.edgeCount == ofEdgeCount){
          discardedFaces.push_back(of.index);
          openFaces.pop_back();
       }
       else {
-         while (of.edgeCount < 3) {
+         while (of.edgeCount < ofEdgeCount) {
             int adj = qh.faces[of.index].adjFaces[of.edge];
 
             if (visited[adj]) {//skip visited
-               of.edge = (of.edge + 1) % 3;//+ 3 - 1 cpp modulo negative grr
+               of.edge = Face::clampedEdge(ofFace, of.edge + 1);
                ++of.edgeCount;
                continue;
             }
 
             openFaces.push_back({ adj, Face::oppositeEdgeIndex(of.index, of.edge, qh.faces), 0, of.index, of.edge });
-            of.edge = (of.edge + 1) % 3;//+ 3 - 1 cpp modulo negative grr
+            of.edge = Face::clampedEdge(ofFace, of.edge + 1);
             ++of.edgeCount;
             break;
          }
@@ -272,53 +305,6 @@ void qhIteration(QuickHull &qh) {
 
       
    }
-   
-
-
-
-   //int lightIndex = cfIndex;
-   //int startEdge = 0;
-   //int nextStart;
-
-   //while (true) {
-   //   int startIndex = lightIndex;
-   //   auto &lf = qh.faces[lightIndex];
-   //   int next = -1;
-   //   
-   //   for (int e = 0; e < 3; ++e) {
-   //      int edge = (startEdge + e) % 3;
-   //      int adjFacei = lf.adjFaces[edge];
-   //      auto &adjFace = qh.faces[adjFacei];
-
-   //      if (!visited[adjFacei]) {
-
-   //         if (Plane::behind(adjFace.pln, furthest)) {
-   //            //horizon edge found
-   //            horizon.push_back({ lightIndex, edge });
-
-   //            //if (adjFace.adjFaces[Face::oppositeEdgeIndex(lightIndex, edge, qh.faces)] != lightIndex) {
-   //            //   return;//PICNIC
-   //            //}
-   //         }
-   //         else if(next < 0){
-   //            //new lightface                             
-   //            next = adjFacei;
-   //            nextStart = edge;
-   //         }
-   //      }
-   //   }
-
-   //   discardedFaces.push_back(lightIndex);
-
-   //   if (next > -1) {
-   //      visited[lightIndex] = true;
-   //      lightIndex = next;
-   //      startEdge = nextStart;
-   //   }
-   //   else {
-   //      break;
-   //   }
-   //}
 
    qh.horizon.clear();
    qh.summit = furthest;
@@ -331,46 +317,73 @@ void qhIteration(QuickHull &qh) {
 
       Face newface;
 
-      switch (edge.litEdge) {         
-      case Face::Edge0_1:
-         newface.verts[0] = lit.verts[1];
-         newface.verts[1] = furthestIndex;
-         newface.verts[2] = lit.verts[0];
-         break;
+      int edgeVertices[2] = { 0 };
+      Face::getEdgeVertices(lit, edge.litEdge, edgeVertices[0], edgeVertices[1]);
 
-      case Face::Edge1_2:
-         newface.verts[0] = lit.verts[2];
-         newface.verts[1] = furthestIndex;
-         newface.verts[2] = lit.verts[1];
-         break;
-
-      case Face::Edge2_0:
-         newface.verts[0] = lit.verts[0];
-         newface.verts[1] = furthestIndex;
-         newface.verts[2] = lit.verts[2];
-         break;
-      }
+      newface.verts.insert(newface.verts.end(), { edgeVertices[0], edgeVertices[1], furthestIndex });
+      newface.adjFaces.resize(3, -1);
 
       qh.horizon.push_back(qh.points[newface.verts[0]]);
-      qh.horizon.push_back(qh.points[newface.verts[2]]);
+      qh.horizon.push_back(qh.points[newface.verts[1]]);
+
 
       newface.buildPlane(qh.points);
 
       int newIndex = qh.faces.size();
-      newface.adjFaces[Face::Edge2_0] = unliti;
-      unlit.adjFaces[Face::oppositeEdgeIndex(edge.litFace, edge.litEdge, qh.faces)] = newIndex;
-      newFaces.push_back(newIndex);  
-      
-      qh.faces.push_back(std::move(newface));
+      newface.adjFaces[0] = unliti;
+      int opposite = Face::oppositeEdgeIndex(edge.litFace, edge.litEdge, qh.faces);
+      unlit.adjFaces[opposite] = newIndex;
+      newFaces.push_back(newIndex); 
+
+      qh.faces.push_back(newface);
    }
 
-   //link the new faces adjacency
+   //link the new faces adjacency as triangles
    int faceCount = qh.faces.size();
    int start = faceCount - newFaces.size();
    for (int i = start; i < faceCount; ++i) {
-      qh.faces[i].adjFaces[Face::Edge0_1] = (i + 1 < faceCount) ? i + 1 : start;
-      qh.faces[i].adjFaces[Face::Edge1_2] = (i > start) ? i - 1 : faceCount - 1;
+      int i2 = (i + 1 < faceCount) ? i + 1 : start;
+      auto &f1 = qh.faces[i];
+      auto &f2 = qh.faces[i2];
+
+      f1.adjFaces[1] = i2;
+      f2.adjFaces[2] = i;
    }
+
+
+   //go through the triangles and merge coplanars
+   for (auto nf = newFaces.begin(); nf != newFaces.end();) {
+      auto &f1 = qh.faces[*nf];
+      int edge = 0;
+
+      bool removed = false;
+      for (auto adj : f1.adjFaces) {
+         auto &f2 = qh.faces[adj];
+
+         if (Face::coPlanar(f1, f2)) {
+
+            auto merged = Face::merge(*nf, adj, edge, qh.faces);
+
+            discardedFaces.push_back(*nf);
+            discardedFaces.push_back(adj);
+
+            newFaces.remove(adj);
+            newFaces.push_back(merged);
+
+            nf = newFaces.erase(nf);
+            removed = true;
+            break;
+         }
+
+         ++edge;
+      }
+
+      if (!removed) {
+         ++nf;
+      }
+   }
+
+   
 
    for (auto &i : discardedFaces) {
       for (auto &pi : qh.faces[i].points) {
@@ -378,6 +391,7 @@ void qhIteration(QuickHull &qh) {
             auto &nf = qh.faces[nfi];
             if (!Plane::behind(nf.pln, qh.points[pi])) {
                nf.points.push_back(pi);
+               break;
             }
          }
       }
@@ -423,10 +437,46 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
    std::vector<FVF_Pos3_Col4> faceLines;
    std::vector<FVF_Pos3_Col4> pointLines;
    ModelVertices polys;
+   ModelVertices copolys;
 
    ColorRGBAf colors[5] = { CommonColors::Red, 
       CommonColors::Blue , CommonColors::Cyan , CommonColors::Yellow , CommonColors::Magenta };
 
+   for (auto &fi : qh.coplanars) {
+      auto &f = qh.faces[fi];
+      int vCount = copolys.positions.size();
+
+      ColorRGBAf lineColor = CommonColors::Black;
+      ColorRGBAf faceColor = CommonColors::Red;
+
+      float normScale = 0.05f;
+
+      std::vector<Float3> points(f.verts.size());
+
+      for (int i = 0; i < f.verts.size(); ++i) {
+         points[i] = vec::add(qh.points[f.verts[i]], vec::mul(f.pln.normal, normScale));
+      }
+
+      for (int i = 0; i < f.verts.size(); ++i) {
+         faceLines.push_back({ points[i], lineColor });
+         faceLines.push_back({ points[Face::clampedEdge(f, i + 1)], lineColor });
+      }
+
+      for (int i = 0; i < f.verts.size() - 2; ++i) {
+         copolys.colors.insert(copolys.colors.end(), { faceColor , faceColor , faceColor });
+         copolys.positions.insert(copolys.positions.end(), {
+            points[0],
+            points[Face::clampedEdge(f, i + 1)],
+            points[Face::clampedEdge(f, i + 2)]
+         });
+
+         copolys.positionIndices.insert(copolys.positionIndices.end(), {
+            vCount + (i * 3) + 0, vCount + (i * 3) + 1,vCount + (i * 3) + 2
+         });
+      }
+
+      
+   }
    
    for (auto &fi : qh.open) {
       auto &f = qh.faces[fi];
@@ -434,35 +484,28 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
       ColorRGBAf color = CommonColors::Red;
       ColorRGBAf lineColor = CommonColors::Black;
 
-      faceLines.insert(faceLines.end(), {
-         { qh.points[f.verts[0]], lineColor },
-         { qh.points[f.verts[1]], lineColor },
-         { qh.points[f.verts[1]], lineColor },
-         { qh.points[f.verts[2]], lineColor },
-         { qh.points[f.verts[2]], lineColor },
-         { qh.points[f.verts[0]], lineColor }
-      });
+      for (int i = 0; i < f.verts.size(); ++i) {
+         faceLines.push_back({ qh.points[f.verts[i]], lineColor });
+         faceLines.push_back({ qh.points[f.verts[Face::clampedEdge(f, i + 1)]], lineColor });
+      }
 
       int vCount = polys.positions.size();
 
       float colorFactor = (fi / (float)qh.faces.size());
       ColorRGBAf faceColor = { 0.0f, 0.0f, colorFactor, 1.0f };
 
-      polys.colors.insert(polys.colors.end(), {
-         faceColor,
-         faceColor,
-         faceColor });
+      for (int i = 0; i < f.verts.size() - 2; ++i) {
+         polys.colors.insert(polys.colors.end(), { faceColor , faceColor , faceColor });
+         polys.positions.insert(polys.positions.end(), {
+            qh.points[f.verts[0]],
+            qh.points[f.verts[Face::clampedEdge(f, i + 1)]],
+            qh.points[f.verts[Face::clampedEdge(f, i + 2)]]
+         });
 
-
-      polys.positions.insert(polys.positions.end(), {
-         qh.points[f.verts[0]],
-         qh.points[f.verts[1]],
-         qh.points[f.verts[2]]});
-
-      polys.positionIndices.insert(polys.positionIndices.end(), {
-         vCount + 0, vCount + 1,vCount + 2
-      });
-
+         polys.positionIndices.insert(polys.positionIndices.end(), {
+            vCount + ( i * 3 ) + 0, vCount + (i * 3) + 1,vCount + (i * 3) + 2
+         });
+      }
 
       auto c = vec::centroid(points[f.verts[0]], points[f.verts[1]], points[f.verts[2]]);
       faceLines.insert(faceLines.end(), {
@@ -473,9 +516,6 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
       for (int i = 0; i < 3; ++i) {
          auto &adj = qh.faces[f.adjFaces[i]];
          auto c2 = vec::centroid(points[adj.verts[0]], points[adj.verts[1]], points[adj.verts[2]]);
-
-
-
          faceLines.insert(faceLines.end(), {
             { vec::add(c, vec::mul(f.pln.normal, 0.02f)), CommonColors::Yellow },
             { vec::add(c2, vec::mul(adj.pln.normal, 0.01f)), CommonColors::Yellow }
@@ -486,7 +526,6 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
          pointLines.push_back({ points[p],  color });
       }
 
-      ++fi;
    }
 
    if (!qh.horizon.empty()) {
@@ -515,21 +554,46 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
    for (auto &fi : qh.closed) {
       auto &f = qh.faces[fi];
 
-      faceLines.insert(faceLines.end(), {
-         { qh.points[f.verts[0]], CommonColors::Green },
-         { qh.points[f.verts[1]], CommonColors::Green },
-         { qh.points[f.verts[1]], CommonColors::Green },
-         { qh.points[f.verts[2]], CommonColors::Green },
-         { qh.points[f.verts[2]], CommonColors::Green },
-         { qh.points[f.verts[0]], CommonColors::Green }
-      });
-      //auto c = vec::centroid(points[f.vertices[0]], points[f.vertices[1]], points[f.vertices[2]]);
-      //faceLines.insert(faceLines.end(), {
-      //   { c, CommonColors::Red },
-      //   { vec::add(c, vec::mul(f.pln.normal, 0.05f)), CommonColors::Red }
-      //});
+      ColorRGBAf color = CommonColors::Red;
+      ColorRGBAf lineColor = CommonColors::Black;
 
-      ++fi;
+      for (int i = 0; i < f.verts.size(); ++i) {
+         faceLines.push_back({ qh.points[f.verts[i]], lineColor });
+         faceLines.push_back({ qh.points[f.verts[Face::clampedEdge(f, i + 1)]], lineColor });
+      }
+
+      int vCount = polys.positions.size();
+
+      float colorFactor = (fi / (float)qh.faces.size());
+      ColorRGBAf faceColor = { 0.0f, colorFactor, colorFactor, 1.0f };
+
+      for (int i = 0; i < f.verts.size() - 2; ++i) {
+         polys.colors.insert(polys.colors.end(), { faceColor , faceColor , faceColor });
+         polys.positions.insert(polys.positions.end(), {
+            qh.points[f.verts[0]],
+            qh.points[f.verts[Face::clampedEdge(f, i + 1)]],
+            qh.points[f.verts[Face::clampedEdge(f, i + 2)]]
+         });
+
+         polys.positionIndices.insert(polys.positionIndices.end(), {
+            vCount + (i * 3) + 0, vCount + (i * 3) + 1,vCount + (i * 3) + 2
+         });
+      }
+
+      auto c = vec::centroid(points[f.verts[0]], points[f.verts[1]], points[f.verts[2]]);
+      faceLines.insert(faceLines.end(), {
+         { c, color },
+         { vec::add(c, vec::mul(f.pln.normal, 0.02f)), color }
+      });
+
+      for (int i = 0; i < 3; ++i) {
+         auto &adj = qh.faces[f.adjFaces[i]];
+         auto c2 = vec::centroid(points[adj.verts[0]], points[adj.verts[1]], points[adj.verts[2]]);
+         faceLines.insert(faceLines.end(), {
+            { vec::add(c, vec::mul(f.pln.normal, 0.02f)), CommonColors::Yellow },
+            { vec::add(c2, vec::mul(adj.pln.normal, 0.01f)), CommonColors::Yellow }
+         });
+      }
    }
 
    out.lineModels.push_back(ModelManager::create(faceLines));
@@ -538,6 +602,9 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
    auto poly = polys.calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
    out.polyModels.push_back(poly);
+
+   auto copoly = copolys.calculateNormals().expandIndices().createModel(ModelOpts::IncludeColor | ModelOpts::IncludeNormals);
+   out.polyModels.push_back(copoly);
 
    return out;
 }
