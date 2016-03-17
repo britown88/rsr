@@ -17,6 +17,14 @@ struct Face {
       pln = Plane::fromFace(pts[verts[0]], pts[verts[1]], pts[verts[2]]);
    }
 
+   static int clampedEdge(Face const &f, int edge) {
+      int eCount = f.adjFaces.size();
+      while (edge < 0) {
+         edge += eCount;
+      }
+      return edge % eCount;
+   }
+
    //given a faceindex f and one of its edges, return the index into
    //the adjacent face's edge list that connects to f
    static int oppositeEdgeIndex(int f, int edge, std::vector<Face> const &faces) {
@@ -26,7 +34,10 @@ struct Face {
       int e = 0;
       for (auto face : f2.adjFaces) {
          if (face == f) {
-            return e;
+            if (f2.verts[e] == f1.verts[clampedEdge(f1, edge + 1)] &&
+               f2.verts[clampedEdge(f2, e + 1)] == f1.verts[edge]) {
+               return e;
+            }
          }
          ++e;
       }
@@ -34,13 +45,7 @@ struct Face {
       return -1;
    }
 
-   static int clampedEdge(Face const &f, int edge) {
-      int eCount = f.adjFaces.size();
-      while (edge < 0) {
-         edge += eCount;
-      }
-      return edge % eCount;
-   }
+   
 
    static void getEdgeVertices(Face const &f, int edge, int &v1, int &v2) {
 
@@ -53,108 +58,48 @@ struct Face {
    }
 
    static int merge(int f1i, int f2i, int edge, std::vector<Face> &faces) {
-
-      if (faces.size() == 165) {
-         edge = oppositeEdgeIndex(f1i, edge, faces);
-         int t = f1i;
-         f1i = f2i;
-         f2i = t;
-      }
+      int newIndex = faces.size();
+      faces.push_back({});
+      Face &newFace = faces[newIndex];
 
       auto &f1 = faces[f1i];
       auto &f2 = faces[f2i];
       int oppositeEdge = oppositeEdgeIndex(f1i, edge, faces);
 
-      bool swapped = false;
+      int v1 = f1.verts[edge];
+      int v2 = f1.verts[clampedEdge(f1, edge + 1)];
 
-      if (
-         f1.verts[edge] == f2.verts[clampedEdge(f2, oppositeEdge + 1)] && 
-         f1.verts[clampedEdge(f1, edge + 1)] == f2.verts[oppositeEdge]
-         ) {
-         swapped = true;
+      newFace.verts.push_back(v1);
+      int current = clampedEdge(f2, oppositeEdge + 2);
 
-      }
-      else {
+      while(current != clampedEdge(f2, oppositeEdge + 1)) {
+         
+         newFace.verts.push_back(f2.verts[current]);
 
-      }
+         int lastEdge = clampedEdge(f2, current - 1);
+         int adj = f2.adjFaces[lastEdge];
+         newFace.adjFaces.push_back(adj);
+         faces[adj].adjFaces[oppositeEdgeIndex(f2i, lastEdge, faces)] = newIndex;
 
-
-      Face newFace = f1;
-      int newIndex = faces.size();
-
-      if (!f2.points.empty()) {
-         int i = 9;
-         ++i;
+         current = clampedEdge(f2, current + 1);
       }
 
-      
+      current = clampedEdge(f1, edge + 2);
 
-      
+      while (current != clampedEdge(f1, edge + 1)) {
+         int lastEdge = clampedEdge(f1, current - 1);
 
-      if (f1.adjFaces.size() == 3 && f2.adjFaces.size() == 4) {
-         int i = 1;
-         ++i;
-      }
-      bool pushToEnd = clampedEdge(f1, edge + 1) == 0;
-
-      std::vector<int>testIndices;
-
-      for (int i = 0; i < f2.verts.size() - 2; ++i) {
-         int e1 = clampedEdge(f1, edge + i + 1);
-         int e2 = clampedEdge(f2, oppositeEdge + i + 2);
-
-         int changedEdge = clampedEdge(f2, e2 - 1);
-         int ceai1 = f2.adjFaces[changedEdge];//changed edge adjacent index
-         int ceai2 = f2.adjFaces[e2];//changed edge adjacent index
-
-         //update the two changed edges to point to the new face
-         faces[ceai1].adjFaces[oppositeEdgeIndex(f2i, changedEdge, faces)] = newIndex;
-
-         testIndices.push_back(ceai1);
-
-         //only update the final face if its our last one
-         if (i == f2.verts.size() - 3) {
-            faces[ceai2].adjFaces[oppositeEdgeIndex(f2i, e2, faces)] = newIndex;
-            testIndices.push_back(ceai2);
+         if (current != edge) {
+            newFace.verts.push_back(f1.verts[current]);
          }
          
-         auto vertIter = pushToEnd ? newFace.verts.end() : newFace.verts.begin() + e1;
-         newFace.verts.insert(vertIter, f2.verts[e2]);
+         int adj = f1.adjFaces[lastEdge];
+         newFace.adjFaces.push_back(adj);
+         faces[adj].adjFaces[oppositeEdgeIndex(f1i, lastEdge, faces)] = newIndex;
 
-         //e1 - 1  = changedegde
-         //insert e2
-         newFace.adjFaces[clampedEdge(newFace, e1 - 1)] = f2.adjFaces[changedEdge];         
-
-         auto adjIter = pushToEnd ? newFace.adjFaces.end() : newFace.adjFaces.begin() + e1;
-         newFace.adjFaces.insert(adjIter, f2.adjFaces[e2]);        
+         current = clampedEdge(f1, current + 1);
       }
-
-      for (int i = 0; i < f1.verts.size() - 1; ++i) {
-         int e = clampedEdge(f1, edge - i - 1);
-         int adji = f1.adjFaces[e];
-
-         faces[adji].adjFaces[oppositeEdgeIndex(f1i, e, faces)] = newIndex;
-      }
-
-
-      faces.push_back(newFace);
-      testIndices.push_back(newIndex);
-
-      if (newIndex == 165) {
-         int FUCK = 0;
-         ++FUCK;
-      }
-
-      for (auto testIndex : testIndices) {
-         for (int test = 0; test < faces[testIndex].adjFaces.size(); ++test) {
-            if (oppositeEdgeIndex(testIndex, test, faces) == -1) {
-               int FUCK = 0;
-               //return *(int*)FUCK;
-            }
-         }
-      }
-
-      
+           
       return newIndex;
    }
 };
@@ -431,7 +376,7 @@ void qhIteration(QuickHull &qh) {
    }
 
    //go through the triangles and merge coplanars
-   /*for (auto nf = newFaces.begin(); nf != newFaces.end();) {
+   for (auto nf = newFaces.begin(); nf != newFaces.end();) {
       auto &f1 = qh.faces[*nf];
       int edge = 0;
 
@@ -444,6 +389,9 @@ void qhIteration(QuickHull &qh) {
             auto merged = Face::merge(*nf, adj, edge, qh.faces);
 
             auto &mf = qh.faces[merged];
+
+            mf.buildPlane(qh.points);
+
             for (int i = 0; i < mf.adjFaces.size(); ++i) {
                if (Face::oppositeEdgeIndex(merged, i, qh.faces) == -1) {
                   break;
@@ -476,7 +424,7 @@ void qhIteration(QuickHull &qh) {
       if (!removed) {
          ++nf;
       }
-   }   */
+   }   
 
 
    for (auto &i : discardedFaces) {
@@ -518,7 +466,7 @@ QuickHullTestModels quickHullTest(PointCloud &points, int iterCount) {
 
    qhInit(qh);
 
-   while (/*iterCount-- && */!qh.open.empty()) {
+   while (iterCount-- && !qh.open.empty()) {
       qhIteration(qh);
    }
 

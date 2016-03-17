@@ -207,7 +207,7 @@ class Game::Impl {
    BunnyModel m_bunnyModel;
    Bunny m_bunny;
 
-   int qhIterCount = 0;
+   int qhIterCount = 1;
 
    void buildBunnyModel() {
 
