@@ -22,7 +22,7 @@ namespace Shaders {
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
-      Shell = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
+      Shell = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | ColorAttribute | Rotation);
       Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
    }
 }
@@ -207,7 +207,7 @@ class Game::Impl {
    BunnyModel m_bunnyModel;
    Bunny m_bunny;
 
-   int qhIterCount = 14;
+   int qhIterCount = 0;
 
    void buildBunnyModel() {
 
@@ -380,7 +380,7 @@ public:
 
          case MouseActions::Mouse_Scrolled:
             m_camera.distance += -me->pos.y * 0.01f;
-            m_camera.distance = std::min(1000.0f, std::max(1.0f, m_camera.distance));
+            m_camera.distance = std::min(1000.0f, std::max(0.1f, m_camera.distance));
             //m_axisScale = m_camera.distance / 10.0f;
             break;
          case MouseActions::Mouse_Moved:
@@ -481,11 +481,11 @@ public:
       r.setColor(uColor, CommonColors::White);
       
       for (auto m : m_bunnyModel.hullModels.lineModels) {
-         r.renderModel(m, ModelManager::Lines);
+         //r.renderModel(m, ModelManager::Lines);
       }
 
       for (auto m : m_bunnyModel.hullModels.pointModels) {
-         //r.renderModel(m, ModelManager::Points);
+         r.renderModel(m, ModelManager::Points);
       }
 
 
