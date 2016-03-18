@@ -22,7 +22,7 @@ namespace Shaders {
       Lines = ShaderManager::create("assets/shaders.glsl", ColorAttribute);
       RLines = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Bunny = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | Rotation);
-      Shell = ShaderManager::create("assets/shaders.glsl", DiffuseLighting | ColorAttribute | Rotation);
+      Shell = ShaderManager::create("assets/shaders.glsl", ColorAttribute | Rotation);
       Track = ShaderManager::create("assets/shaders.glsl", DiffuseLighting);
    }
 }
@@ -207,7 +207,7 @@ class Game::Impl {
    BunnyModel m_bunnyModel;
    Bunny m_bunny;
 
-   int qhIterCount = 1;
+   int qhIterCount = 1000;
 
    void buildBunnyModel() {
 
@@ -433,7 +433,7 @@ public:
       r.setShader(Shaders::Skybox);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
-      r.renderModel(m_skybox);
+      //r.renderModel(m_skybox);
 
       r.enableDepth(true);
 
@@ -481,7 +481,7 @@ public:
       r.setColor(uColor, CommonColors::White);
       
       for (auto m : m_bunnyModel.hullModels.lineModels) {
-         //r.renderModel(m, ModelManager::Lines);
+         r.renderModel(m, ModelManager::Lines);
       }
 
       for (auto m : m_bunnyModel.hullModels.pointModels) {

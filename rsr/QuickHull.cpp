@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <list>
+#include <algorithm>
 
 typedef std::vector<Float3> PointCloud;
 typedef std::list<int> FaceList;
@@ -14,7 +15,26 @@ struct Face {
    std::vector<int> points;
 
    void buildPlane(std::vector<Float3> &pts) {
-      pln = Plane::fromFace(pts[verts[0]], pts[verts[1]], pts[verts[2]]);
+      Float3 centroid, normal;
+      size_t vCount = verts.size();
+
+      centroid.x = pts[verts[0]].x + pts[verts[1]].x;
+      centroid.y = pts[verts[0]].y + pts[verts[1]].y;
+      centroid.z = pts[verts[0]].z + pts[verts[1]].z;
+
+      normal = { 0.0f, 0.0f, 0.0f };
+
+      for (int i = 0; i < verts.size() - 2; ++i) {
+         auto &v1 = pts[verts[i]];
+         auto &v2 = pts[verts[i + 1]];
+         auto &v3 = pts[verts[i + 2]];
+
+         centroid = vec::add(centroid, v3);
+         normal = vec::add(normal, vec::faceNormal(v1, v2, v3));
+      }
+
+      pln.normal = vec::normal(vec::mul(normal, 1.0f / (vCount - 2)));
+      pln.orig = pts[verts[0]];
    }
 
    static int clampedEdge(Face const &f, int edge) {
@@ -54,10 +74,11 @@ struct Face {
    }
 
    static bool coPlanar(Face const &f1, Face const &f2) {
-      return vec::dot(f1.pln.normal, f2.pln.normal) > 0.999f;
+      return vec::dot(f1.pln.normal, f2.pln.normal) > 0.99999f;
    }
 
    static int merge(int f1i, int f2i, int edge, std::vector<Face> &faces) {
+
       int newIndex = faces.size();
       faces.push_back({});
       Face &newFace = faces[newIndex];
@@ -66,13 +87,24 @@ struct Face {
       auto &f2 = faces[f2i];
       int oppositeEdge = oppositeEdgeIndex(f1i, edge, faces);
 
+      int edgeLen = 0;
+      for (int i = 0; i < f1.verts.size(); ++i) {
+         int nextEdge = clampedEdge(f1, edge + i);
+         if(f1.adjFaces[nextEdge] == f2i) {
+            ++edgeLen;
+         }
+         else {
+            break;
+         }
+      }
+
       int v1 = f1.verts[edge];
-      int v2 = f1.verts[clampedEdge(f1, edge + 1)];
+      int v2 = f1.verts[clampedEdge(f1, edge + edgeLen)];
 
       newFace.verts.push_back(v1);
       int current = clampedEdge(f2, oppositeEdge + 2);
 
-      while(current != clampedEdge(f2, oppositeEdge + 1)) {
+      while(current != clampedEdge(f2, oppositeEdge + 2 - edgeLen)) {
          
          newFace.verts.push_back(f2.verts[current]);
 
@@ -84,7 +116,7 @@ struct Face {
          current = clampedEdge(f2, current + 1);
       }
 
-      current = clampedEdge(f1, edge + 2);
+      current = clampedEdge(f1, edge + 1 + edgeLen);
 
       while (current != clampedEdge(f1, edge + 1)) {
          int lastEdge = clampedEdge(f1, current - 1);
@@ -389,7 +421,6 @@ void qhIteration(QuickHull &qh) {
             auto merged = Face::merge(*nf, adj, edge, qh.faces);
 
             auto &mf = qh.faces[merged];
-
             mf.buildPlane(qh.points);
 
             for (int i = 0; i < mf.adjFaces.size(); ++i) {
