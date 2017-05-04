@@ -8,7 +8,7 @@ class UBO {
    uintptr_t m_ubo;
    
    void build() {
-      glGenBuffers(1, &m_ubo);
+      glGenBuffers(1, (GLuint*)&m_ubo);
 
       glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
       glBufferData(GL_UNIFORM_BUFFER, m_size, NULL, GL_STATIC_DRAW);
@@ -21,7 +21,7 @@ public:
    UBO(size_t size):m_size(size) { }
    ~UBO(){
       if (m_built) {
-         glDeleteBuffers(1, &m_ubo);
+         glDeleteBuffers(1, (GLuint*)&m_ubo);
       }
    }
    void setData(UBO *self, size_t offset, size_t size, void *data) {

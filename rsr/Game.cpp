@@ -229,7 +229,7 @@ class Game::Impl {
             //}
          }
 
-         m_bunnyModel.hullModels = quickHullTest(vs.positions, qhIterCount);
+         //m_bunnyModel.hullModels = quickHullTest(vs.positions, qhIterCount);
 
 
          m_bunnyModel.vertices = vs.calculateNormals();
@@ -433,7 +433,7 @@ public:
       r.setShader(Shaders::Skybox);
       r.bindCubeMap(m_cubemap, 0);
       r.setTextureSlot(uSkyboxSlot, 0);
-      //r.renderModel(m_skybox);
+      r.renderModel(m_skybox);
 
       r.enableDepth(true);
 
@@ -453,7 +453,7 @@ public:
 
 
       auto c = m_bunny.color;
-      c.a = 0.5f;
+      //c.a = 0.5f;
 
       r.setShader(Shaders::Bunny);
       r.setMatrix(uModel, m_bunny.modelMatrix);
@@ -471,32 +471,32 @@ public:
       r.setShader(Shaders::Track);
       r.setMatrix(uModel, Matrix::identity());
       r.setColor(uColor, CommonColors::DkGray);
-      //r.renderModel(m_testTrack);
+      r.renderModel(m_testTrack);
 
       //r.enableDepth(false);
 
-      r.setShader(Shaders::RLines);
-      r.setMatrix(uModel, m_bunny.modelMatrix);
-      r.setMatrix(uModelRotation, m_bunny.rotation);
-      r.setColor(uColor, CommonColors::White);
-      
-      for (auto m : m_bunnyModel.hullModels.lineModels) {
-         r.renderModel(m, ModelManager::Lines);
-      }
+      //r.setShader(Shaders::RLines);
+      //r.setMatrix(uModel, m_bunny.modelMatrix);
+      //r.setMatrix(uModelRotation, m_bunny.rotation);
+      //r.setColor(uColor, CommonColors::White);
+      //
+      //for (auto m : m_bunnyModel.hullModels.lineModels) {
+      //   r.renderModel(m, ModelManager::Lines);
+      //}
 
-      for (auto m : m_bunnyModel.hullModels.pointModels) {
-         r.renderModel(m, ModelManager::Points);
-      }
+      //for (auto m : m_bunnyModel.hullModels.pointModels) {
+      //   r.renderModel(m, ModelManager::Points);
+      //}
 
 
-      r.setShader(Shaders::Shell);
-      r.setMatrix(uModel, m_bunny.modelMatrix);
-      r.setMatrix(uModelRotation, m_bunny.rotation);
-      r.setColor(uColor, CommonColors::White);
+      //r.setShader(Shaders::Shell);
+      //r.setMatrix(uModel, m_bunny.modelMatrix);
+      //r.setMatrix(uModelRotation, m_bunny.rotation);
+      //r.setColor(uColor, CommonColors::White);
 
-      for (auto m : m_bunnyModel.hullModels.polyModels) {
-        r.renderModel(m);
-      }
+      //for (auto m : m_bunnyModel.hullModels.polyModels) {
+      //  r.renderModel(m);
+      //}
 
 
       //

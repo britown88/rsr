@@ -11,7 +11,7 @@ class CubeMap {
    std::vector<std::string> m_faceFiles;
 
    void build() {
-      glGenTextures(1, &m_handle);
+      glGenTextures(1, (GLuint*)&m_handle);
       glActiveTexture(GL_TEXTURE0);
 
       glBindTexture(GL_TEXTURE_CUBE_MAP, m_handle);
